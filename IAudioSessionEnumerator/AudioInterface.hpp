@@ -31,6 +31,7 @@ template <class VTYPE> inline void vectorRelease(std::vector<VTYPE> *v) {
 	i != v->size(); i++) {
 		safeRelease(&(*v)[i]);
 	}
+	v->clear();
 }
 
 //Simple HRESULT check function
@@ -42,8 +43,10 @@ inline void checkHR(HRESULT hres) {
 class AudioInterface {
 private:
 	IAudioSessionManager2 * sessionManager;
+	int numSessions;
 	std::vector<IAudioSessionControl *> sessionsControl;
 	std::vector<IAudioSessionControl2 *> sessionsControl2;
+	std::vector<ISimpleAudioVolume *> volumes;
 
 	//	Title: getProcessName
 	//	Description: Gets the .exe name for a given PID
@@ -72,5 +75,12 @@ public:
 	//	Parameters: pointer to GUID to be updated, and int specifying the index in sessionsControl vector
 	HRESULT getGroupingGUID(GUID * groupingGUID, int i);
 
+	//	Description: Work in progress, adds a volume control interface for each session. 
+	HRESULT addVolumeControl();
+
+	// Description: Work in progress, allows the user to change the volume of a specific program
+	HRESULT changeVolume();
 };
+
+
 

@@ -53,6 +53,19 @@ namespace validate {
 	int getIntBetween(int min, int max);
 
 	/*********************************************************************
+	** Function: getDoubleBetween
+	** Description: Gets line from std::cin and ensures that the total line
+	**		forms a correct float that is between the specified minimum
+	**		and maximum inclusive within the given precision. If the number
+	**		is above or below the bounds within the precision, it will be
+	**		rounded to the nearest bound.
+	** Parameters: double specifying the maximum acceptable double and double
+	**		specifying the minimum acceptable double.
+	** Output: Returns input from user as double
+	*********************************************************************/
+	double getDoubleBetween(double min, double max, double precision = .0001);
+
+	/*********************************************************************
 	** Function: getString
 	** Description: Gets string from std::getline. Ensures string is not
 	**		empty.
