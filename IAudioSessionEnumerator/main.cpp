@@ -54,11 +54,13 @@ void mainMenuChoice(int choice, AudioInterface* audioI) {
 		//menu::enterToContinue();
 		break;
 	case 2: std::cout << "Volume control in progress." << std::endl;
+		audioI->refreshSessions();
 		audioI->printVolumes();
 		//menu::enterToContinue();
 		break;
 	case 3: std::cout << "Volume control in progress." << std::endl;
-		//menu::enterToContinue();
+		audioI->refreshSessions();
+		audioI->changeVolume();
 		break;
 	case 4: break;
 	}

@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<logicalClassDesignerDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 11, 11" name="UMLClassDiagram1">
+  <logicalClassDesignerModelMoniker Id="316950d4-64d0-4157-81dc-7960de8c9856" />
+  <nestedChildShapes>
+    <interfaceShape Id="0aab58e4-3b5a-4f75-b28e-fec1b81d0290" absoluteBounds="0.625, 7, 5.125, 1.0624999801317845" hideQualifiedName="false" increaseHeight="0" customColor="207, 223, 191">
+      <interfaceMoniker Id="090da901-e289-4450-b76a-9004c826cbcf" LastKnownName="IAudioSessionControl2" />
+      <nestedChildShapes>
+        <AttributeElementListCompartment Id="a54d0595-a617-4168-93e6-8303654f874d" absoluteBounds="0.64, 7.39, 5.0950000000000006, 0.2011718675494194" name="AttributesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <OperationElementListCompartment Id="3339eff9-6b09-4572-9df2-f45f5b2d1616" absoluteBounds="0.64, 7.60117186754942, 5.0950000000000006, 0.36132811258236563" name="OperationsCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </interfaceShape>
+    <interfaceShape Id="a890d3f0-257f-480d-81fe-2ee321a511f3" absoluteBounds="0.625, 9.25, 2.625, 1.5429687152306233" hideQualifiedName="false" increaseHeight="0" customColor="207, 223, 191">
+      <interfaceMoniker Id="d9e343f3-62b0-48e7-996a-eef7981eab81" LastKnownName="ISimpleAudioVolume" />
+      <nestedChildShapes>
+        <AttributeElementListCompartment Id="a9f9249f-dcef-48a4-bf7f-75f5d3e589b3" isExpanded="false" absoluteBounds="0.6399999999999999, 9.64, 2.5949999999999998, 0.2011718675494194" name="AttributesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <OperationElementListCompartment Id="bd8a1027-441f-4176-9cc7-b2432b13e601" absoluteBounds="0.64, 9.85117186754942, 2.5949999999999998, 0.84179684768120444" name="OperationsCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </interfaceShape>
+    <generalizationConnector edgePoints="[(0.625 : 7.9047317813363); (0.229166666666667 : 7.9047317813363); (0.229166666666667 : 9.94732812513908); (0.625 : 9.94732812513908)]" manuallyRouted="true" fixedFrom="Algorithm" fixedTo="Algorithm" customColor="113, 111, 110">
+      <generalizationMoniker Id="a04c7d18-efb2-4cdc-8cc4-25a85233e651" />
+      <relativeChildShapes />
+      <nodes>
+        <interfaceShapeMoniker Id="0aab58e4-3b5a-4f75-b28e-fec1b81d0290" />
+        <interfaceShapeMoniker Id="a890d3f0-257f-480d-81fe-2ee321a511f3" />
+      </nodes>
+    </generalizationConnector>
+    <commentShape Id="10385dba-3dbe-46fc-93df-02e0e5e3c77d" absoluteBounds="0.625, 8.875, 2.625, 0.375" customColor="251, 247, 200">
+      <commentMoniker Id="4a96c84f-27e1-4b08-9e55-fc0905c51723" />
+      <relativeChildShapes />
+    </commentShape>
+  </nestedChildShapes>
+</logicalClassDesignerDiagram>
