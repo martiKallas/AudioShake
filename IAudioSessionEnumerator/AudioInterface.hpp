@@ -17,6 +17,8 @@
 #include <Psapi.h>
 #include <vector>
 
+#define WAIT_TIME 50
+
 //Safely release a COM ptr
 template <class T> inline void safeRelease(T **ppT) {
 	if (*ppT) {
@@ -47,6 +49,9 @@ private:
 	std::vector<IAudioSessionControl *> sessionsControl;
 	std::vector<IAudioSessionControl2 *> sessionsControl2;
 	std::vector<ISimpleAudioVolume *> volumes;
+	std::vector<IAudioMeterInformation *> meters;
+	std::vector<int> muteList;
+	std::vector<double> originalVolume;
 
 	//	Title: getProcessName
 	//	Description: Gets the .exe name for a given PID
@@ -80,6 +85,17 @@ public:
 
 	// Description: Work in progress, allows the user to change the volume of a specific program
 	HRESULT changeVolume();
+
+	//Description: Work in progress, currently allows user to press enter to get a peak meter value
+	HRESULT monitorMeter();
+
+	//Description: Work in progress, adds a programs to the mute list based on menu selection by the user.
+	HRESULT addMute();
+	
+	//Description: Work in progress, currently listens for a hard-coded button press to mute programs in
+	//	the mute list.
+	HRESULT beginMuteListen();
+	
 };
 
 

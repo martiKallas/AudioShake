@@ -1,6 +1,9 @@
 #include "AudioInterface.hpp"
 #include <cwchar>
 #include "Validation.hpp"
+#include "Menu.hpp"
+#include <string>
+
 
 
 //	Title: AudioInterface
@@ -17,6 +20,7 @@ AudioInterface::~AudioInterface() {
 	vectorRelease(&this->sessionsControl);
 	vectorRelease(&this->sessionsControl2);
 	vectorRelease(&this->volumes);
+	vectorRelease(&this->meters);
 	safeRelease(&this->sessionManager);
 }
 
@@ -89,23 +93,24 @@ HRESULT AudioInterface::refreshSessions() {
 	IAudioSessionControl* sControl = nullptr; //to point to a session object
 	IAudioSessionControl2 * sControl2 = nullptr;
 	ISimpleAudioVolume * sVolume = nullptr;
+	IAudioMeterInformation * sMeter = nullptr;
 	DWORD processID = -1;
 
 	vectorRelease(&this->sessionsControl);
 	vectorRelease(&this->sessionsControl2);
 	vectorRelease(&this->volumes);
+	vectorRelease(&this->meters);
 	//Get the current list of sessions.
 	checkHR(hr = this->sessionManager->GetSessionEnumerator(&sessionEnumerator)); //Create sessionEnumerator object at sessionEnumerator
 
 																				  //Get the session count.
 	checkHR(hr = sessionEnumerator->GetCount(&sessionCount)); //Populate session count\
 
-															  //TODO: Loop prints multiple instances? of Windows media player... check into why
-															  //Print the sessions
 	for (int i = 0; i < sessionCount; i++) {
 		sControl = nullptr;
 		sControl2 = nullptr;
 		sVolume = nullptr;
+		sMeter = nullptr;
 
 		checkHR(hr = sessionEnumerator->GetSession(i, &sControl)); //get next session pointer
 		this->sessionsControl.push_back(sControl);
@@ -113,6 +118,8 @@ HRESULT AudioInterface::refreshSessions() {
 		this->sessionsControl2.push_back(sControl2);
 		checkHR(hr = sControl2->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&sVolume)); //get volume control for the session
 		this->volumes.push_back(sVolume);
+		checkHR(hr = sControl2->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&sMeter));
+		this->meters.push_back(sMeter);
 
 	}
 	if (this->sessionsControl2.size() != this->sessionsControl.size()) std::cout << "Session controls not equal." << std::endl;
@@ -162,7 +169,7 @@ HRESULT AudioInterface::printVolumes() {
 		(*it)->GetMute(&mute);
 		sessionsControl2[i]->GetSessionIdentifier(&sessionIdentifier);
 		wprintf_s(L"Session #%d Identifier: %d\n", i, (void **)&sessionIdentifier);
-		printf_s("Current session volume: %f. Muted: %d", vol, mute);
+		printf_s("Current session volume: %f. Muted: %d\n", vol, mute);
 		i++;
 	}//for loop
 	CoTaskMemFree(sessionIdentifier);
@@ -208,6 +215,98 @@ HRESULT AudioInterface::changeVolume() {
 	}
 	else {
 		printf_s("Volume was not correctly changed in changeVolume()");
+	}
+	return hr;
+}
+
+HRESULT AudioInterface::monitorMeter() {
+	HRESULT hr = S_OK;
+	if (this->numSessions == 0) {
+		printf_s("No session!");
+		return hr;
+	}
+	AudioInterface::printSessions();
+	printf_s("Please select which sessions meter you would like to monitor: ");
+	int sesh = validate::getIntBetween(0, this->numSessions - 1);
+	printf_s("The monitor will begin shortly, press space to exit. Please enter time between peak updates (ms).");
+	DWORD timer = 50;
+	timer = validate::getIntMin(1);
+	int quit = 0;
+	float peak = 0;
+	char bar = '|';
+	std::string level = "";
+	while (quit == 0) {
+		if (GetAsyncKeyState(VK_SPACE)) {
+			quit = 1;
+		}
+		this->meters[sesh]->GetPeakValue(&peak);
+		int i = (peak*20);
+		level = std::string(i, bar) + '\n';
+		printf_s(level.c_str());
+		Sleep(timer);
+	}
+}
+
+HRESULT AudioInterface::addMute() {
+	HRESULT hr = S_OK;
+	muteList.clear();
+	originalVolume.clear();
+	int quit = 0;
+	float origin = 1.f;
+	while (true) {
+		printSessions();
+		std::cout << "Select the number of the program to add to the mute list or enter -1 to return to main menu." << std::endl;
+		quit = validate::getIntBetween(-1, this->numSessions);
+		if (quit == -1) {
+			break;
+		}
+		else {
+			muteList.push_back(quit);
+			(*(this->volumes[quit])).GetMasterVolume(&origin);
+			std::cout << "Stored Volume: " << origin << std::endl;
+			originalVolume.push_back(origin);
+			menu::clearScreen();
+			std::cout << "Program " << quit << " added to mute list." << std::endl;
+		}
+	}
+
+	return hr;
+}
+
+HRESULT AudioInterface::beginMuteListen() {
+	HRESULT hr = S_OK;
+	int waitTime = WAIT_TIME;
+	std::cout << "Once the listen loop is entered, use \\ to mute selected programs. Use F4 to exit the loop." << std::endl;
+	std::cout << "Enter the sleep value in ms for the loop. Smaller is more responsive but requires more CPU. Enter -1 to return to main menu." << std::endl;
+	waitTime = validate::getIntBetween(-1, 100);
+	if (waitTime == -1) return hr;
+	int quit = 0;
+	int isMuted = false;
+	short keyState = 0;
+	int muteLength = muteList.size();
+	while (!quit) {
+		if (isMuted) {
+			if (!GetAsyncKeyState(VK_DECIMAL)) {//VK_OEM_5 is \ : VK_DECIMAL is numpad '.' : VK_DOWN is down arrow
+				isMuted = false;
+				for (int i = 0; i < muteLength; i++) {
+					std::cout << "i = " << i << std::endl;
+					std::cout << "Volumes? : " << originalVolume[i] << std::endl;
+					hr = this->volumes[muteList[i]]->SetMasterVolume(originalVolume[i], NULL);
+				}
+			}
+
+		}
+		else {
+			if (GetAsyncKeyState(VK_DECIMAL)) {
+				isMuted = true;
+				for (auto it = begin(this->muteList); it != end(this->muteList); ++it) {
+					hr = this->volumes[*it]->SetMasterVolume(0.f, NULL);
+				}
+			}
+		}
+		if (GetAsyncKeyState(VK_F4)) quit = 1;
+		Sleep(waitTime);
+
 	}
 	return hr;
 }

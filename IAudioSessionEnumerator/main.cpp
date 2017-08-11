@@ -3,6 +3,9 @@
 
 void mainMenuChoice(int choice, AudioInterface* audioI);
 
+#define MENU_OPTIONS 7
+
+
 int main() {
 	HRESULT hr = S_OK;
 
@@ -13,17 +16,20 @@ int main() {
 
 	// Create menu
 	menu::Menu mainMenu;
-	std::string menuOptions[4];
+	std::string menuOptions[MENU_OPTIONS];
 	menuOptions[0] = "List audio sessions.";
 	menuOptions[1] = "Get Current Volume.";
 	menuOptions[2] = "Change volume.";
-	menuOptions[3] = "Quit.";
-	mainMenu.setOptions(menuOptions, 4);
+	menuOptions[3] = "Monitor peak volume.";
+	menuOptions[4] = "Bind programs to mute.";
+	menuOptions[5] = "Begin mute listen.";
+	menuOptions[MENU_OPTIONS - 1] = "Quit.";
+	mainMenu.setOptions(menuOptions, MENU_OPTIONS);
 
 	int currentOption = 0;
 
 	// Begin console interface
-	while (currentOption != 4) {
+	while (currentOption != MENU_OPTIONS) {
 		currentOption = mainMenu.getChoice();
 		std::cout << std::endl;
 		mainMenuChoice(currentOption, &auI);
@@ -62,6 +68,15 @@ void mainMenuChoice(int choice, AudioInterface* audioI) {
 		audioI->refreshSessions();
 		audioI->changeVolume();
 		break;
-	case 4: break;
+	case 4: 
+		audioI->monitorMeter();
+		break;
+	case 5:
+		audioI->addMute();
+		break;
+	case 6:
+		audioI->beginMuteListen();
+		break;
+	case MENU_OPTIONS: break;
 	}
 }
