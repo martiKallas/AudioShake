@@ -18,6 +18,21 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="IAudioSessionEnumerator\AudioInterface.cpp" />
+    <ClCompile Include="IAudioSessionEnumerator\main.cpp" />
+    <ClCompile Include="IAudioSessionEnumerator\Menu.cpp" />
+    <ClCompile Include="IAudioSessionEnumerator\Validation.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="IAudioSessionEnumerator\AudioInterface.hpp" />
+    <ClInclude Include="IAudioSessionEnumerator\Menu.hpp" />
+    <ClInclude Include="IAudioSessionEnumerator\Validation.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="IAudioSessionEnumerator\IAudioSessionEnumerator.vcxproj" />
+    <None Include="IAudioSessionEnumerator\IAudioSessionEnumerator.vcxproj.filters" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DE7DE489-A036-478C-810B-1002AB26D56D}</ProjectGuid>
     <RootNamespace>IAudioSessionEnumerator</RootNamespace>
@@ -112,17 +127,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="AudioInterface.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Menu.cpp" />
-    <ClCompile Include="Validation.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="AudioInterface.hpp" />
-    <ClInclude Include="Menu.hpp" />
-    <ClInclude Include="Validation.hpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
