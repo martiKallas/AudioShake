@@ -11,6 +11,7 @@
 AudioInterface::AudioInterface() {
 	this->sessionManager = nullptr;
 	this->numSessions = 0;
+	this->dimThreshold = DIM_LEVEL;
 }
 
 //	Title: AudioInterface ~destructor
@@ -21,12 +22,14 @@ AudioInterface::~AudioInterface() {
 	vectorRelease(&this->sessionsControl2);
 	vectorRelease(&this->volumes);
 	vectorRelease(&this->meters);
-	safeRelease(&this->sessionManager);
+	safeReleaseAI(&this->sessionManager);
+	sessions.clear();
 }
 
 //	TODO: update appropriate variables to class specific variables: candidates device, deviceEnumerator
 HRESULT AudioInterface::initializeManager() {
 	HRESULT hr = S_OK;
+	this->dimThreshold = DIM_LEVEL;
 
 	//IMMDevice interface encapsulates generic featrues of a multimedia device resource. Represents an audio endpoint device.
 	IMMDevice* device = nullptr;
@@ -34,42 +37,22 @@ HRESULT AudioInterface::initializeManager() {
 
 	//Create the device enumerator:
 	//CoCreateInstance creates a single uninitialized object of the class associated with a specified CLSID.
-	checkHR(hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&deviceEnumerator));
+	checkHR(hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&deviceEnumerator), "initializeMangager 1");
 			//__uuidof gets the GUID ("Globally Unique Identifier") of the expression... Learn more
 			//CLSCTX_ALL indicates all contexts of a class, others might be server, remote, exe... Learn more
 
 	//Get the default audio device
-	checkHR(hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device));
+	checkHR(hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device), "initializeMangaer 2");
 
 	//Get the session manager
-	checkHR(hr = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, NULL, (void**)&this->sessionManager));
+	checkHR(hr = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, NULL, (void**)&this->sessionManager), "initializeManager 3");
 
 //done:
-	safeRelease(&deviceEnumerator);
-	safeRelease(&device);
+	safeReleaseAI(&deviceEnumerator);
+	safeReleaseAI(&device);
 
 	return hr;
 }
-
-//	Title: getProcessName
-//	Description: Gets the .exe name for a given PID
-//	Parameters: pointer to processID, address of a TCHAR buffer, length of TCHAR buffer
-//	Postconditions: None
-HRESULT AudioInterface::getProcessName(DWORD * processID, TCHAR * processName, int maxLength) {
-	if (!processID || !processName || maxLength < 1) return E_INVALIDARG;
-	HANDLE processHandle = OpenProcess(
-		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-		FALSE,
-		*processID
-		);
-	if (processHandle) {
-		GetModuleBaseName(processHandle, NULL, processName, maxLength);
-	}
-	else return E_FAIL;
-
-	return S_OK;
-}
-
 
 //	Title: refreshSessions();
 //	Description: Populates the session vectors for AudioInterface
@@ -84,50 +67,24 @@ HRESULT AudioInterface::refreshSessions() {
 	}
 
 	HRESULT hr = S_OK; //HRESULT is success/failure code (0 = success) of type long
-
-
 	int sessionCount = 0;
 	LPWSTR session = nullptr; //LPWSTR = 32-bit pointer to a string of 16-bit Unicode chars
-
 	IAudioSessionEnumerator* sessionEnumerator = nullptr; //to point to a session enumerator object
 	IAudioSessionControl* sControl = nullptr; //to point to a session object
-	IAudioSessionControl2 * sControl2 = nullptr;
-	ISimpleAudioVolume * sVolume = nullptr;
-	IAudioMeterInformation * sMeter = nullptr;
-	DWORD processID = -1;
 
-	vectorRelease(&this->sessionsControl);
-	vectorRelease(&this->sessionsControl2);
-	vectorRelease(&this->volumes);
-	vectorRelease(&this->meters);
+	sessions.clear();
 	//Get the current list of sessions.
-	checkHR(hr = this->sessionManager->GetSessionEnumerator(&sessionEnumerator)); //Create sessionEnumerator object at sessionEnumerator
-
-																				  //Get the session count.
-	checkHR(hr = sessionEnumerator->GetCount(&sessionCount)); //Populate session count\
+	checkHR(hr = this->sessionManager->GetSessionEnumerator(&sessionEnumerator), "refreshSessions"); //Create sessionEnumerator object at sessionEnumerator
+	checkHR(hr = sessionEnumerator->GetCount(&sessionCount), "refreshSessions 2"); //Populate session count\
 
 	for (int i = 0; i < sessionCount; i++) {
 		sControl = nullptr;
-		sControl2 = nullptr;
-		sVolume = nullptr;
-		sMeter = nullptr;
-
-		checkHR(hr = sessionEnumerator->GetSession(i, &sControl)); //get next session pointer
-		this->sessionsControl.push_back(sControl);
-		checkHR(hr = sControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sControl2)); //get sessionControl2 interface
-		this->sessionsControl2.push_back(sControl2);
-		checkHR(hr = sControl2->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&sVolume)); //get volume control for the session
-		this->volumes.push_back(sVolume);
-		checkHR(hr = sControl2->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&sMeter));
-		this->meters.push_back(sMeter);
+		checkHR(hr = sessionEnumerator->GetSession(i, &sControl), "refreshSessions 3"); //get next session pointer
+		this->sessions.push_back(Session(sControl));
 
 	}
-	if (this->sessionsControl2.size() != this->sessionsControl.size()) std::cout << "Session controls not equal." << std::endl;
-	//TODO: probably add this stuff to the deconstructor
-	//done:
-	safeRelease(&sessionEnumerator);
-
-	this->numSessions = sessionCount;
+	std::cout << "Number of items in sessions vector: " << sessions.size() << std::endl;
+	safeReleaseAI(&sessionEnumerator);
 	return hr;
 }
 
@@ -135,99 +92,75 @@ HRESULT AudioInterface::refreshSessions() {
 //	Description: Prints the sessions in vector sessionsControl2 to std output
 //	Preconditions: Initialize sessionManager... should not print if sessionsControl2 not populated
 //	Postconditions: None
-HRESULT AudioInterface::printSessions() {
+void AudioInterface::printSessions() {
 	HRESULT hr = S_OK;
+	if (sessions.size() == 0) {
+		std::cout << "There are no active sessions" << std::endl;
+		return;
+	}
 	TCHAR processName[_MAX_FNAME];
 	DWORD processID;
-	int max = this->sessionsControl2.size();
-	for (int i = 0; i < max; i++) {
-		if (sessionsControl2[i]) {
-			sessionsControl2[i]->GetProcessId(&processID);
+	int i = 0;
+	for (auto it = sessions.begin(); it != sessions.end(); ++it) {
+			processID = it->getProcessID();
 			wprintf_s(L"Process #%d Identifier: %d\n", i, processID);
-			hr = getProcessName(&processID, processName, _MAX_FNAME);
-			if (hr == S_OK && processName) {
-				printf_s("Process #%d Exe: %s\n", i, processName);
+			std::string processName = it->getProcessName();
+			if (hr == S_OK && processName.size() < _MAX_FNAME) {
+				std::cout << "Process " << i << " Exe: " << processName << std::endl;
 			}
 			else {
 				printf_s("Process #%d Exe: no exe - likely system default\n", i);
 			}
-		}//if sessionsControl2[i]
+			i++;
 	}//for loop
-	hr = S_OK;
-	return hr;
 }
 
-HRESULT AudioInterface::printVolumes() {
-	HRESULT hr = S_OK;
-	LPWSTR sessionIdentifier = nullptr;
+void AudioInterface::printVolumes() {
 	int max = this->volumes.size();
 	float vol = 1.f;
 	BOOL mute = FALSE;
+	DWORD sessionIdentifier;
 	int i = 0;
-	for (auto it = this->volumes.begin(); it != end(this->volumes); ++it){	
-		(*it)->GetMasterVolume(&vol);
-		(*it)->GetMute(&mute);
-		sessionsControl2[i]->GetSessionIdentifier(&sessionIdentifier);
-		wprintf_s(L"Session #%d Identifier: %d\n", i, (void **)&sessionIdentifier);
+	for (auto it = this->sessions.begin(); it != this->sessions.end(); ++it){	
+		vol = it->getVolume();
+		mute = it->getMuted();
+		sessionIdentifier = it->getProcessID();
+		wprintf_s(L"Session #%d Identifier: %d\n", i, sessionIdentifier);
 		printf_s("Current session volume: %f. Muted: %d\n", vol, mute);
 		i++;
 	}//for loop
-	CoTaskMemFree(sessionIdentifier);
-	return hr;
 }
 
-HRESULT AudioInterface::getGroupingGUID(GUID * groupingGUID, int i) {
-	HRESULT hr = S_OK;
+/* Removed until needed
+GUID AudioInterface::getGroupingGUID(GUID * groupingGUID, int i) {
 	hr = sessionsControl[i]->GetGroupingParam(groupingGUID);
 	return hr;
-}
+} */
 
-//TODO: delete this after commit to save  
-HRESULT AudioInterface::addVolumeControl() {
-	HRESULT hr = S_OK;
-	if (this->sessionsControl2.size() == 0) {
-		printf_s("sessionControl2 is empty at addVolumeControl call.");
-		return hr; 
-	}
-	ISimpleAudioVolume* volume = NULL;
-	for (auto it = begin(this->sessionsControl2); it != end(this->sessionsControl2); ++it) {
-		checkHR(hr = (*it)->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&volume));
-		this->volumes.push_back(volume);
-
-	}
-	return hr;
-}
-
-HRESULT AudioInterface::changeVolume() {
-	HRESULT hr = S_OK;
-	if (this->numSessions == 0) {
+void AudioInterface::changeVolume() {
+	if (sessions.size() == 0) {
 		printf_s("No sessions!");
-		return hr;
+		return;
 	}
 	AudioInterface::printSessions();
 	printf_s("Please select which session volume you want to change: ");
-	int sesh = validate::getIntBetween(0, this->numSessions - 1);
+	int sesh = validate::getIntBetween(0, sessions.size() - 1);
 	printf_s("Enter a new volume between 0.0 and 1.0:");
 	double newVolume = validate::getDoubleBetween(0.0, 1.0);
-	hr = this->volumes[sesh]->SetMasterVolume(newVolume, NULL);
-	if (hr == S_OK) {
-		printf_s("Volume was set to %.3g", newVolume);
-	}
-	else {
-		printf_s("Volume was not correctly changed in changeVolume()");
-	}
-	return hr;
+	sessions[sesh].setVolume(newVolume);
+	printf_s("Volume was set to %.3g", newVolume);
 }
 
-HRESULT AudioInterface::monitorMeter() {
-	HRESULT hr = S_OK;
-	if (this->numSessions == 0) {
+void AudioInterface::monitorMeter() {
+	//TODO: may need to adjust meter based on Master Volume
+	// Seems peak value is Master * Session Volume
+	if (sessions.size() == 0) {
 		printf_s("No session!");
-		return hr;
+		return;
 	}
 	AudioInterface::printSessions();
 	printf_s("Please select which sessions meter you would like to monitor: ");
-	int sesh = validate::getIntBetween(0, this->numSessions - 1);
+	int sesh = validate::getIntBetween(0, sessions.size() - 1);
 	printf_s("The monitor will begin shortly, press space to exit. Please enter time between peak updates (ms).");
 	DWORD timer = 50;
 	timer = validate::getIntMin(1);
@@ -239,7 +172,8 @@ HRESULT AudioInterface::monitorMeter() {
 		if (GetAsyncKeyState(VK_SPACE)) {
 			quit = 1;
 		}
-		this->meters[sesh]->GetPeakValue(&peak);
+		peak = sessions[sesh].getPeak();
+		std::cout << peak;
 		int i = (peak*20);
 		level = std::string(i, bar) + '\n';
 		printf_s(level.c_str());
@@ -247,66 +181,106 @@ HRESULT AudioInterface::monitorMeter() {
 	}
 }
 
-HRESULT AudioInterface::addMute() {
-	HRESULT hr = S_OK;
-	muteList.clear();
-	originalVolume.clear();
+void AudioInterface::addMuteKeyed() {
+	muteKeyList.clear();
 	int quit = 0;
 	float origin = 1.f;
 	while (true) {
 		printSessions();
-		std::cout << "Select the number of the program to add to the mute list or enter -1 to return to main menu." << std::endl;
-		quit = validate::getIntBetween(-1, this->numSessions);
+		std::cout << "Select the number of the program to add to the mute key list or enter -1 to return to main menu." << std::endl;
+		quit = validate::getIntBetween(-1, sessions.size());
 		if (quit == -1) {
 			break;
 		}
 		else {
-			muteList.push_back(quit);
-			(*(this->volumes[quit])).GetMasterVolume(&origin);
-			std::cout << "Stored Volume: " << origin << std::endl;
-			originalVolume.push_back(origin);
+			muteKeyList.push_back(&sessions[quit]);
 			menu::clearScreen();
 			std::cout << "Program " << quit << " added to mute list." << std::endl;
 		}
 	}
-
-	return hr;
 }
 
-HRESULT AudioInterface::beginMuteListen() {
-	HRESULT hr = S_OK;
-	int waitTime = WAIT_TIME;
-	std::cout << "Once the listen loop is entered, use \\ to mute selected programs. Use F4 to exit the loop." << std::endl;
-	std::cout << "Enter the sleep value in ms for the loop. Smaller is more responsive but requires more CPU. Enter -1 to return to main menu." << std::endl;
-	waitTime = validate::getIntBetween(-1, 100);
-	if (waitTime == -1) return hr;
+void AudioInterface::addMuteDependent() {
+	muteDependents.clear();
 	int quit = 0;
-	int isMuted = false;
-	short keyState = 0;
-	int muteLength = muteList.size();
-	while (!quit) {
-		if (isMuted) {
-			if (!GetAsyncKeyState(VK_DECIMAL)) {//VK_OEM_5 is \ : VK_DECIMAL is numpad '.' : VK_DOWN is down arrow
-				isMuted = false;
-				for (int i = 0; i < muteLength; i++) {
-					std::cout << "i = " << i << std::endl;
-					std::cout << "Volumes? : " << originalVolume[i] << std::endl;
-					hr = this->volumes[muteList[i]]->SetMasterVolume(originalVolume[i], NULL);
-				}
-			}
-
+	float origin = 1.f;
+	while (true) {
+		printSessions();
+		std::cout << "Select the number of the program to add to the mute dependent list or enter -1 to return to main menu." << std::endl;
+		quit = validate::getIntBetween(-1, sessions.size());
+		if (quit == -1) {
+			break;
 		}
 		else {
-			if (GetAsyncKeyState(VK_DECIMAL)) {
-				isMuted = true;
-				for (auto it = begin(this->muteList); it != end(this->muteList); ++it) {
-					hr = this->volumes[*it]->SetMasterVolume(0.f, NULL);
-				}
+			muteDependents.push_back(&sessions[quit]);
+			menu::clearScreen();
+			std::cout << "Program " << quit << " added to mute list." << std::endl;
+		}
+	}
+}
+
+void AudioInterface::addMuteMaster() {
+	muteMasters.clear();
+	int quit = 0;
+	float origin = 1.f;
+	while (true) {
+		printSessions();
+		std::cout << "Select the number of the program to add to the mute master list or enter -1 to return to main menu." << std::endl;
+		quit = validate::getIntBetween(-1, sessions.size());
+		if (quit == -1) {
+			break;
+		}
+		else {
+			muteMasters.push_back(&sessions[quit]);
+			menu::clearScreen();
+			std::cout << "Program " << quit << " added to mute list." << std::endl;
+		}
+	}
+}
+
+void AudioInterface::beginMuteListen() {
+	int waitTime = WAIT_TIME;
+	std::cout << "Once the listen loop is entered, use \\ to mute selected programs. Use F4 to exit the loop." << std::endl;
+	std::cout << "Enter the sleep value in ms for the loop. Smaller is more responsive but requires more CPU. 50 is recommended." << std::endl;
+	std::cout << "Enter - 1 to return to main menu." << std::endl;
+	waitTime = validate::getIntBetween(-1, 100);
+	if (waitTime == -1) return ;
+	int quit = 0;
+	int isMuted = 0;
+	int isDimmed = 0;
+	
+	int dimOn = 0;
+	int muteDown = 0;
+	while (!quit) {
+		dimOn = 0;
+		muteDown = 0;
+		for (auto it = muteMasters.begin(); it != muteMasters.end(); ++it) {
+			if ((*it)->getPeak() > dimThreshold) {
+				dimOn = 1;
+				break;
 			}
 		}
+		if (GetAsyncKeyState(VK_DOWN)) muteDown = 1;
+
+		//if there is a change, update the volumes
+		if ((muteDown != isMuted)) {
+			isMuted = muteDown;
+			std::cout << "Mute changed to: " << muteDown << " in AudioI" << std::endl;
+			for(auto it = begin(this->muteKeyList); it != end(this->muteKeyList); ++it) {
+				(*it)->smartVolume(muteDown, -1);
+			}
+		}
+
+		if ((dimOn != isDimmed)) {
+			isDimmed = dimOn;
+			std::cout << "Dim changed to: " << dimOn << " in AudioI" << std::endl;
+			for (auto it = muteDependents.begin(); it != muteDependents.end(); ++it) {
+				(*it)->smartVolume(-1, dimOn);
+			}
+		}
+		
 		if (GetAsyncKeyState(VK_F4)) quit = 1;
 		Sleep(waitTime);
 
 	}
-	return hr;
 }

@@ -3,14 +3,14 @@
 
 void mainMenuChoice(int choice, AudioInterface* audioI);
 
-#define MENU_OPTIONS 7
+#define MENU_OPTIONS 9
 
 
 int main() {
 	HRESULT hr = S_OK;
 
 	// Initialize COM interface
-	checkHR(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED));
+	checkHR(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED), "main");
 	AudioInterface auI;
 	auI.initializeManager();
 
@@ -21,8 +21,10 @@ int main() {
 	menuOptions[1] = "Get Current Volume.";
 	menuOptions[2] = "Change volume.";
 	menuOptions[3] = "Monitor peak volume.";
-	menuOptions[4] = "Bind programs to mute.";
-	menuOptions[5] = "Begin mute listen.";
+	menuOptions[4] = "Bind programs to mute key.";
+	menuOptions[5] = "Bind dependent programs for muting.";
+	menuOptions[6] = "Bind master programs for muting.";
+	menuOptions[7] = "Begin mute listen.";
 	menuOptions[MENU_OPTIONS - 1] = "Quit.";
 	mainMenu.setOptions(menuOptions, MENU_OPTIONS);
 
@@ -72,9 +74,15 @@ void mainMenuChoice(int choice, AudioInterface* audioI) {
 		audioI->monitorMeter();
 		break;
 	case 5:
-		audioI->addMute();
+		audioI->addMuteKeyed();
 		break;
 	case 6:
+		audioI->addMuteDependent();
+		break;
+	case 7:
+		audioI->addMuteMaster();
+		break;
+	case 8:
 		audioI->beginMuteListen();
 		break;
 	case MENU_OPTIONS: break;

@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include "Session.hpp"
 #include <AudioPolicy.h>
 #include <Windows.h>
 #include <mmdeviceapi.h>
@@ -18,9 +19,10 @@
 #include <vector>
 
 #define WAIT_TIME 50
+#define DIM_LEVEL 0.02
 
 //Safely release a COM ptr
-template <class T> inline void safeRelease(T **ppT) {
+template <class T> inline void safeReleaseAI(T **ppT) {
 	if (*ppT) {
 		(*ppT)->Release();
 		*ppT = nullptr;
@@ -29,28 +31,30 @@ template <class T> inline void safeRelease(T **ppT) {
 
 //Safely release a vector of COM ptrs
 template <class VTYPE> inline void vectorRelease(std::vector<VTYPE> *v) {
-	for (std::vector<VTYPE>::size_type i = 0;
-	i != v->size(); i++) {
-		safeRelease(&(*v)[i]);
+	for (std::vector<VTYPE>::size_type i = 0; i != v->size(); i++) {
+		safeReleaseAI(&(*v)[i]);
 	}
 	v->clear();
 }
 
-//Simple HRESULT check function
-//TODO: expand checkHR for better debugging
-inline void checkHR(HRESULT hres) {
-	if (hres != S_OK) exit(hres);
-}
 
 class AudioInterface {
 private:
 	IAudioSessionManager2 * sessionManager;
 	int numSessions;
+	std::vector<Session>  sessions;
+	float dimThreshold;
+
+	//TODO:remove these to END
 	std::vector<IAudioSessionControl *> sessionsControl;
 	std::vector<IAudioSessionControl2 *> sessionsControl2;
 	std::vector<ISimpleAudioVolume *> volumes;
 	std::vector<IAudioMeterInformation *> meters;
-	std::vector<int> muteList;
+	//END
+
+	std::vector<Session *> muteKeyList;
+	std::vector<Session *> muteDependents;
+	std::vector<Session *> muteMasters;
 	std::vector<double> originalVolume;
 
 	//	Title: getProcessName
@@ -71,30 +75,36 @@ public:
 	HRESULT refreshSessions();
 
 	//	Description: Prints the PID and .exe name for all of the active sessions.
-	HRESULT printSessions();
+	void printSessions();
 
 	//	Description: Work in progress... want to be able to find and print volumes of all sessions.
-	HRESULT printVolumes();
+	void printVolumes();
 
 	//	Description: Gets grouping GUID for sessions... hopefully to initialize ISimpleAudioVolume
 	//	Parameters: pointer to GUID to be updated, and int specifying the index in sessionsControl vector
-	HRESULT getGroupingGUID(GUID * groupingGUID, int i);
-
-	//	Description: Work in progress, adds a volume control interface for each session. 
-	HRESULT addVolumeControl();
+	// ###################### REMOVED UNTIL NEEDED #####################################
+	//GUID getGroupingGUID(GUID * groupingGUID, int i);
 
 	// Description: Work in progress, allows the user to change the volume of a specific program
-	HRESULT changeVolume();
+	void changeVolume();
 
 	//Description: Work in progress, currently allows user to press enter to get a peak meter value
-	HRESULT monitorMeter();
+	void monitorMeter();
 
-	//Description: Work in progress, adds a programs to the mute list based on menu selection by the user.
-	HRESULT addMute();
+	//Description: Work in progress, adds a programs to a list. All programs on mute list get muted on key press
+	void addMuteKeyed();
+
+	//Description: Adds program to list where programs on the dependent list will be muted when any program on the
+	//	master list is producing significant volume.
+	void addMuteDependent();
+
+	//Description: Adds program to list where programs on the master list will be muted when any program on the
+	//	master list is producing significant volume.
+	void addMuteMaster();
 	
 	//Description: Work in progress, currently listens for a hard-coded button press to mute programs in
 	//	the mute list.
-	HRESULT beginMuteListen();
+	void beginMuteListen();
 	
 };
 
