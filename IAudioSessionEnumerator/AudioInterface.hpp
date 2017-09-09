@@ -105,6 +105,10 @@ public:
 	//Description: Work in progress, currently listens for a hard-coded button press to mute programs in
 	//	the mute list.
 	void beginMuteListen();
+
+
+	//Description: Restores volumes to original on quit
+	void restoreVolumes();
 	
 };
 

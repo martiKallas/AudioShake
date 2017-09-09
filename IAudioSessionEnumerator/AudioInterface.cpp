@@ -248,6 +248,7 @@ void AudioInterface::beginMuteListen() {
 	int quit = 0;
 	int isMuted = 0;
 	int isDimmed = 0;
+	int isRamping = 0;
 	
 	int dimOn = 0;
 	int muteDown = 0;
@@ -265,17 +266,24 @@ void AudioInterface::beginMuteListen() {
 		//if there is a change, update the volumes
 		if ((muteDown != isMuted)) {
 			isMuted = muteDown;
-			std::cout << "Mute changed to: " << muteDown << " in AudioI" << std::endl;
 			for(auto it = begin(this->muteKeyList); it != end(this->muteKeyList); ++it) {
-				(*it)->smartVolume(muteDown, -1);
+				isRamping = (*it)->smartVolume(muteDown, -1);
 			}
 		}
 
-		if ((dimOn != isDimmed)) {
+		if (dimOn != isDimmed) {
 			isDimmed = dimOn;
-			std::cout << "Dim changed to: " << dimOn << " in AudioI" << std::endl;
 			for (auto it = muteDependents.begin(); it != muteDependents.end(); ++it) {
-				(*it)->smartVolume(-1, dimOn);
+				isRamping = (*it)->smartVolume(-1, dimOn);
+			}
+		}
+		else if (isRamping) {
+			for (auto it = muteDependents.begin(); it != muteDependents.end(); ++it) {
+				isRamping = (*it)->smartVolume(-1, dimOn);
+			}
+			for (auto it = begin(this->muteKeyList); it != end(this->muteKeyList); ++it) {
+				//dimOn is passed in this case to continue ramping
+				isRamping = (*it)->smartVolume(-1, dimOn);
 			}
 		}
 		
@@ -283,4 +291,15 @@ void AudioInterface::beginMuteListen() {
 		Sleep(waitTime);
 
 	}
+	restoreVolumes();
+}
+
+void AudioInterface::restoreVolumes() {
+	for (auto it = muteDependents.begin(); it != muteDependents.end(); ++it) {
+		(*it)->restoreVolume();
+	}
+	for (auto it = muteKeyList.begin(); it != muteKeyList.end(); ++it) {
+		(*it)->restoreVolume();
+	}
+}
 }

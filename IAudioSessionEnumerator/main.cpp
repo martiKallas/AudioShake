@@ -85,6 +85,8 @@ void mainMenuChoice(int choice, AudioInterface* audioI) {
 	case 8:
 		audioI->beginMuteListen();
 		break;
-	case MENU_OPTIONS: break;
+	case MENU_OPTIONS: 
+		audioI->restoreVolumes();
+		break;
 	}
 }

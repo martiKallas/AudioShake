@@ -7,6 +7,7 @@ Session::Session() {
 	this->sMeter = nullptr;
 	isMuted = 0;
 	isDimmed = 0;
+	isRamping = 0;
 }
 
 Session::Session(IAudioSessionControl * sControl){
@@ -32,6 +33,7 @@ Session::Session(IAudioSessionControl * sControl){
 	dimVolume = newVol;
 	isMuted = 0;
 	isDimmed = 0;
+	isRamping = 0;
 }
 
 Session::~Session(){
@@ -107,37 +109,47 @@ float Session::getDim() {
 	return this->dimVolume;
 }
 
-void Session::smartVolume(int mute, int dim) {
+int Session::smartVolume(int mute, int dim) {
 	if (mute == 1 && !isMuted) {
 		std::cout << "Volume set to 0 in session" << std::endl;
 		sVolume->SetMasterVolume(0.0, NULL);
 		isMuted = 1;
+		isRamping = 0;
 	}
 	else if (mute == 0 && isMuted) {
 		isMuted = 0;
 		if (!isDimmed) { //restore original volume
-			std::cout << "Volume restored to full from mute in session" << std::endl;
-			restoreVolume();
+			std::cout << "Volume restored from mute" << std::endl;
+			currentVol = dimVolume;
+			sVolume->SetMasterVolume(currentVol, NULL);
+			isRamping = 1;
 		}
 		else { //restore dimmed volume
-			std::cout << "Volume restored to dim level in session" << std::endl;
-			sVolume->SetMasterVolume(dimVolume, NULL);
+			std::cout << "Volume restored to dim level" << std::endl;
+			sVolume->SetMasterVolume(currentVol, NULL);
 		}
 	}
-	if (dim == 1 && !isDimmed) {
+	if (dim == 1 && (!isDimmed || isRamping)) {
 		isDimmed = 1;
+		isRamping = 0;
 		if (!isMuted) {
-			std::cout << "Volume dimmed in session" << std::endl;
-			sVolume->SetMasterVolume(dimVolume, NULL);
+			std::cout << "Volume dimmed" << std::endl;
+			currentVol = dimVolume;
+			sVolume->SetMasterVolume(currentVol, NULL);
 		}
 	}
 
-	else if (dim == 0 && isDimmed) {
-		isDimmed = 0;
+	else if (dim == 0 && (isDimmed || isRamping)) {
 		if (!isMuted) {
-			std::cout << "Volume restored to full from  dim in session" << std::endl;
-			restoreVolume();
+			currentVol += (defaultVolume - dimVolume) / RAMP_STEPS;
+			isRamping = 1;
+			isDimmed = 0;
+			if (currentVol > defaultVolume) {
+				isRamping = 0;
+				currentVol = defaultVolume;
+			}
+			sVolume->SetMasterVolume(currentVol, NULL);
 		}
 	}
-	
+	return isRamping;
 }

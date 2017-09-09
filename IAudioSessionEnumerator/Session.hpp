@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #define DIM_MULT 0.5
+#define RAMP_STEPS 20
 
 //Safely release a COM ptr
 template <class T> inline void safeRelease(T *ppT) {
@@ -50,7 +51,9 @@ public:
 
 	//Takes ints -1, 0, 1. -1 indicates no change. 0 = false, 1 = true
 	//	Adjusts volume based on whether it is currently dimmed and/or muted
-	void smartVolume(int mute, int dim);
+	//	Returns isRamping variable to indicate whether current session is
+	//	ramping or not (1 for, 0 for not).
+	int smartVolume(int mute, int dim);
 
 	//Returns the sesssion to its stored default Volume
 	void restoreVolume();
@@ -62,7 +65,9 @@ private:
 	float dimVolume;
 	int isMuted;
 	int isDimmed;
+	int isRamping;
 	GUID groupingID;
+	float currentVol;
 
 	//Audio Interfaces:
 	IAudioSessionControl * sControl;
