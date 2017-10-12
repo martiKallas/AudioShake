@@ -302,4 +302,3 @@ void AudioInterface::restoreVolumes() {
 		(*it)->restoreVolume();
 	}
 }
-}
