@@ -22,11 +22,13 @@
     <ClCompile Include="IAudioSessionEnumerator\AudioInterface.cpp" />
     <ClCompile Include="IAudioSessionEnumerator\main.cpp" />
     <ClCompile Include="IAudioSessionEnumerator\Menu.cpp" />
+    <ClCompile Include="IAudioSessionEnumerator\Session.cpp" />
     <ClCompile Include="IAudioSessionEnumerator\Validation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IAudioSessionEnumerator\AudioInterface.hpp" />
     <ClInclude Include="IAudioSessionEnumerator\Menu.hpp" />
+    <ClInclude Include="IAudioSessionEnumerator\Session.hpp" />
     <ClInclude Include="IAudioSessionEnumerator\Validation.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -36,8 +38,8 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DE7DE489-A036-478C-810B-1002AB26D56D}</ProjectGuid>
     <RootNamespace>IAudioSessionEnumerator</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
-    <ProjectName>VolumeControl</ProjectName>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <ProjectName>AudioShake_Console</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
