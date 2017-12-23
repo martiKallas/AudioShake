@@ -2,7 +2,7 @@
 
 The main goal of this project is to create a lightweight audio ducking program. 
 
-This need arises while playing games, for instance. If the user wants to communicate through
+This need arises while playing games. If the user wants to communicate through
 an application such as TeamSpeak, it can be difficult to get the volumes of both TeamSpeak
 and the game at optimal levels. 
 
