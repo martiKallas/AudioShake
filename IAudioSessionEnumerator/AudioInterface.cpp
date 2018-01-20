@@ -1,7 +1,5 @@
 #include "AudioInterface.hpp"
 #include <cwchar>
-#include "Validation.hpp"
-#include "Menu.hpp"
 #include <string>
 
 
@@ -300,5 +298,29 @@ void AudioInterface::restoreVolumes() {
 	}
 	for (auto it = muteKeyList.begin(); it != muteKeyList.end(); ++it) {
 		(*it)->restoreVolume();
+	}
+}
+
+int AudioInterface::dimMaxExceeded() {
+	for (auto it = muteMasters.begin(); it != muteMasters.end(); ++it) {
+		if ((*it)->getPeak() > dimThreshold) {
+			return 1;
+		}
+	}
+}
+
+int AudioInterface::adjustKeyDependents(int mute, int dim) {
+	int isRamping = 0;
+	for (auto it = begin(this->muteKeyList); it != end(this->muteKeyList); ++it) {
+		isRamping = ( isRamping || (*it)->smartVolume(mute, dim)) ? 1 : 0;
+	}
+	return isRamping;
+}
+
+
+int AudioInterface::adjustDimDependents(int mute, int dim) {
+	int isRamping = 0;
+	for (auto it = muteDependents.begin(); it != muteDependents.end(); ++it) {
+		isRamping = (isRamping || (*it)->smartVolume(mute, dim)) ? 1 : 0;
 	}
 }

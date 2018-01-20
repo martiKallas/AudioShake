@@ -20,6 +20,7 @@
 
 #define WAIT_TIME 50
 #define DIM_LEVEL 0.02
+#define NO_CHANGE -1
 
 //Safely release a COM ptr
 template <class T> inline void safeReleaseAI(T **ppT) {
@@ -110,6 +111,14 @@ public:
 	//Description: Restores volumes to original on quit
 	void restoreVolumes();
 	
+	//Checks if any of the session in MuteMasters have exceeded the threshold
+	int dimMaxExceeded();
+
+	//Calls smartVolume for muteKey Sessions
+	int adjustKeyDependents(int mute, int dim);
+
+	//Calls smartVolume for dim Sessions
+	int adjustDimDependents(int mute, int dim);
 };
 
 
