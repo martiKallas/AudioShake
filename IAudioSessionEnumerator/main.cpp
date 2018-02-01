@@ -3,6 +3,7 @@
 #include <wx/propgrid/propgrid.h>
 #include "AudioInterface.hpp"
 #include "ListenLoop.hpp"
+#include "GUISession.hpp"
 
 // Should be defined in virtually every app
 class MyApp : public wxApp {
@@ -17,15 +18,20 @@ class MyFrame : public wxFrame {
 public:
 	MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
 private:
-	LoopThread *lThread;
+	std::vector<GUISession*> sessionElements;
+	std::vector<sessionID> sessionIDs;
+	AudioInterface audioI;
+	ListenLoop *lThread;
+	bool loopRunning = false;
 	void OnHello(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
 	void OnAbout(wxCommandEvent& event);
-	void OnAdd(wxCommandEvent& event);
+	void OnRefresh(wxCommandEvent& event);
 	void OnRun(wxCommandEvent& event);
-	void OnLoop(wxCommandEvent& event);
-	void StopLoop(wxCommandEvent& event);
+	void OnStop(wxCommandEvent& event);
+	void ClearElements();
 	wxFlexGridSizer *table;
+	wxSizer *mainSizer;
 	wxPanel *page;
 	wxDECLARE_EVENT_TABLE();
 };
@@ -33,22 +39,17 @@ private:
 //To react to menu command, the command must be given a unique identifier (const variable or enum)
 //	Some events have ID's already defined in wxWidgets
 enum {
-	ID_Hello = 1,
-	ID_CheckBox1 = 2,
-	ID_AddRow = 3,
-	ID_DeleteRow = 4,
-	ID_LoopStart = ID_THREAD_UPDATE,
-	ID_LoopEnd
+	ID_Run,
+	ID_Stop,
+	ID_Refresh
 };
 
 // The event table is created so that events are routed to the appropriate handlers.
 wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
-EVT_MENU(ID_Hello, MyFrame::OnHello)
 EVT_MENU(wxID_EXIT, MyFrame::OnExit)
-EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
-EVT_BUTTON(ID_AddRow, MyFrame::OnAdd)
-EVT_BUTTON(ID_LoopStart, MyFrame::OnLoop)
-EVT_BUTTON(ID_LoopEnd, MyFrame::StopLoop)
+EVT_BUTTON(ID_Refresh, MyFrame::OnRefresh)
+EVT_BUTTON(ID_Run, MyFrame::OnRun)
+EVT_BUTTON(ID_Stop, MyFrame::OnStop)
 wxEND_EVENT_TABLE()
 
 //Creates and starts the main function
@@ -93,15 +94,29 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	//create main tab
 	page = new wxPanel(this);
 
-	//Create loop thread
-	lThread = new LoopThread(this);
+	//Create audio interface
+	audioI = AudioInterface();
+	audioI.initializeManager();
+	loopRunning = false;
 
 	//Generic Placeholder Items
 	//wxSizer *row1 = new wxStaticBoxSizer(new wxStaticBox(page, wxID_ANY, wxT("")), wxHORIZONTAL);
 	int xPad = 20;
 	int yPad = 30;
 	table = new wxFlexGridSizer(4, xPad, yPad);
-	wxSizer *mainSizer = new wxBoxSizer(wxVERTICAL); //buttons and table
+	mainSizer = new wxBoxSizer(wxVERTICAL);
+	
+	 //Create Add/Delete buttons -> now run/stop
+	wxStaticBoxSizer *buttons = new wxStaticBoxSizer(wxHORIZONTAL, page, wxT(""));
+	wxButton *runB = new wxButton(page, ID_Run, wxT("Run"));
+	buttons->Add(runB);
+	wxButton *stopB = new wxButton(page, ID_Stop, wxT("Stop"));
+	buttons->Add(stopB);
+	wxButton *refreshB = new wxButton(page, ID_Refresh, wxT("Refresh"));
+	buttons->Add(refreshB);
+	mainSizer->Add(buttons);
+
+	//Labels for aud
 	wxStaticText *titleName = new wxStaticText(page, wxID_ANY, wxT("Program Name"));
 	table->Add(titleName, -1, wxALIGN_LEFT);
 	wxStaticText *titleListen = new wxStaticText(page, wxID_ANY, wxT("Listen To"));
@@ -110,24 +125,9 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	table->Add(titleDim, -1, wxALIGN_CENTER);
 	wxStaticText *titleMute = new wxStaticText(page, wxID_ANY, wxT("Mute Key"));
 	table->Add(titleMute, -1, wxALIGN_CENTER);
-	wxStaticText *name1 = new wxStaticText(page, wxID_ANY, wxT("&Placholder EXE Name 1"));
-	table->Add(name1, -1, wxALIGN_CENTER);
-	wxCheckBox *box1r1 = new wxCheckBox(page, wxID_ANY, wxT(""));
-	table->Add(box1r1, -1, wxALIGN_CENTER);
-	wxCheckBox *box2r1 = new wxCheckBox(page, wxID_ANY, wxT(""));
-	table->Add(box2r1, -1, wxALIGN_CENTER);
-	wxCheckBox *box3r1 = new wxCheckBox(page, wxID_ANY, wxT(""));
-	table->Add(box3r1, -1, wxALIGN_CENTER);
-	mainSizer->Add(table);
-	//Create Add/Delete buttons -> now run/stop
-	wxStaticBoxSizer *buttons = new wxStaticBoxSizer(wxHORIZONTAL, page, wxT(""));
-	wxButton *addB = new wxButton(page, ID_LoopStart, wxT("Run"));
-	buttons->Add(addB);
-	wxButton *deleteB = new wxButton(page, ID_LoopEnd, wxT("Stop"));
-	buttons->Add(deleteB);
-	mainSizer->Add(buttons);
 
 	//Adjust size of window
+	mainSizer->Add(table);
 	wxSize minTableSize = table->CalcMin();
 	minTableSize.x += xPad * 3;
 	minTableSize.y += yPad * 2;
@@ -148,41 +148,80 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	//	notebook->AddPage(page, wxT("Settings"));
 }
 
-
-void MyFrame::OnAdd(wxCommandEvent& event) {
-	wxStaticText *newLabel = new wxStaticText(page, wxID_ANY, wxT("New Label"));
-	table->Add(newLabel);
-	for (int i = 0; i < 3; i++) {
-		wxCheckBox *newBox = new wxCheckBox(page, wxID_ANY, wxT(""));
-		table->Add(newBox, -1, wxALIGN_CENTER);
-	}
-	table->CalcMin();
-	page->Layout();
-
-}
-
 void MyFrame::OnExit(wxCommandEvent& event) {
+	if (loopRunning) {
+		lThread->setLoopVar(0);
+	}
 	Close(true);
 }
 
-void MyFrame::OnAbout(wxCommandEvent& event) {
-	wxMessageBox("This is a wxWidgets' Hello World sample", "About Hello World", wxOK | wxICON_INFORMATION);
-}
-
-void MyFrame::OnHello(wxCommandEvent& event) {
-	wxLogMessage("Hello world from wxWidgets!");
-}
-
 void MyFrame::OnRun(wxCommandEvent& event) {
-
-}
-
-void MyFrame::StopLoop(wxCommandEvent& event) {
-	lThread->setLoopVar(0);
-}
-
-void MyFrame::OnLoop(wxCommandEvent& event) {
+	if (loopRunning) {
+		lThread->setLoopVar(0);
+		loopRunning = false;
+	}
+	lThread = new ListenLoop(this, &audioI);
+	lThread->setMuteKey(audioI.getMuteKey());
+	lThread->setQuitKey(audioI.getQuitKey());
+	lThread->setRefreshTime(audioI.getRefreshTime());
+	audioI.clearLists();
+	//If the check boxes are checked, add the session to the appropriate list
+	int success = 0;
+	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it){
+		if ((*it)->keyBoxChecked()){
+			success = audioI.addMuteKeyed((*it)->getSessionID());
+		}
+		if ((*it)->masterBoxChecked()){
+			success = audioI.addMuteMaster((*it)->getSessionID());
+		}
+		if ((*it)->dependentBoxChecked()){
+			success = audioI.addMuteDependent((*it)->getSessionID());
+		}
+	}		
+	loopRunning = true;
 	if (lThread->Run() != wxTHREAD_NO_ERROR) {
 		wxLogError(wxT("Can't start thread!"));
 	}
+}
+
+void MyFrame::OnStop(wxCommandEvent& event) {
+	//ListenLoop is a detached thread. Setting loopVar = 0 will terminate the thread
+	lThread->setLoopVar(0);
+	loopRunning = false;
+}
+
+void MyFrame::OnRefresh(wxCommandEvent& event) {
+	audioI.refreshSessions(&sessionIDs);
+	ClearElements();
+	int exists = 0;
+	int elemCount = 0;
+	GUISession * newElems;
+	for (auto it = sessionIDs.begin(); it != sessionIDs.end(); ++it) {
+		newElems = new GUISession(page, *it);
+		sessionElements.push_back(newElems);
+		table->Add(newElems->getTitle(), -1, wxALIGN_LEFT);
+		table->Add(newElems->getMasterBox(), -1, wxALIGN_CENTER);
+		table->Add(newElems->getDependentBox(), -1, wxALIGN_CENTER);
+		table->Add(newElems->getKeyBox(), -1, wxALIGN_CENTER);
+	}
+	int xPad = 20;
+	int yPad = 30;
+
+	wxSize minTableSize = table->CalcMin();
+	minTableSize.x += xPad * 3;
+	minTableSize.y += yPad * 2;
+	table->SetMinSize(minTableSize);
+	wxSize minPageSize = minTableSize;
+	minPageSize.y += 100;
+	this->SetSizeHints(minPageSize);
+	this->SetInitialSize(minPageSize);
+	table->Layout();
+	page->SetSizerAndFit(mainSizer);
+}
+
+void MyFrame::ClearElements() {
+	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it) {
+		delete *it;
+	}
+	sessionElements.clear();
 }

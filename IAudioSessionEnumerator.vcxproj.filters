@@ -27,6 +27,9 @@
     <ClCompile Include="IAudioSessionEnumerator\ListenLoop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="IAudioSessionEnumerator\GUISession.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IAudioSessionEnumerator\AudioInterface.hpp">
@@ -36,6 +39,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="IAudioSessionEnumerator\ListenLoop.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IAudioSessionEnumerator\GUISession.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

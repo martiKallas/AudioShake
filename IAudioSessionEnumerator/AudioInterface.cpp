@@ -9,17 +9,13 @@
 AudioInterface::AudioInterface() {
 	this->sessionManager = nullptr;
 	this->numSessions = 0;
-	this->dimThreshold = DIM_LEVEL;
+	loadSettings();
 }
 
 //	Title: AudioInterface ~destructor
 //	Description: Safely releases all interfaces, letting outside COM objects
 //		know that AudioInterface is no longer using those objects.
 AudioInterface::~AudioInterface() {
-	vectorRelease(&this->sessionsControl);
-	vectorRelease(&this->sessionsControl2);
-	vectorRelease(&this->volumes);
-	vectorRelease(&this->meters);
 	safeReleaseAI(&this->sessionManager);
 	sessions.clear();
 }
@@ -27,7 +23,6 @@ AudioInterface::~AudioInterface() {
 //	TODO: update appropriate variables to class specific variables: candidates device, deviceEnumerator
 HRESULT AudioInterface::initializeManager() {
 	HRESULT hr = S_OK;
-	this->dimThreshold = DIM_LEVEL;
 
 	//IMMDevice interface encapsulates generic featrues of a multimedia device resource. Represents an audio endpoint device.
 	IMMDevice* device = nullptr;
@@ -36,16 +31,16 @@ HRESULT AudioInterface::initializeManager() {
 	//Create the device enumerator:
 	//CoCreateInstance creates a single uninitialized object of the class associated with a specified CLSID.
 	checkHR(hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&deviceEnumerator), "initializeMangager 1");
-			//__uuidof gets the GUID ("Globally Unique Identifier") of the expression... Learn more
-			//CLSCTX_ALL indicates all contexts of a class, others might be server, remote, exe... Learn more
+	//__uuidof gets the GUID ("Globally Unique Identifier") of the expression... Learn more
+	//CLSCTX_ALL indicates all contexts of a class, others might be server, remote, exe... Learn more
 
-	//Get the default audio device
+//Get the default audio device
 	checkHR(hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device), "initializeMangaer 2");
 
 	//Get the session manager
 	checkHR(hr = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, NULL, (void**)&this->sessionManager), "initializeManager 3");
 
-//done:
+	//done:
 	safeReleaseAI(&deviceEnumerator);
 	safeReleaseAI(&device);
 
@@ -59,10 +54,7 @@ HRESULT AudioInterface::initializeManager() {
 //  TODO: implement with a sessionManager
 //  TODO: document function
 //	TODO: update appropriate variables to class specific variables
-HRESULT AudioInterface::refreshSessions() {
-	if (!this->sessionManager) {
-		return E_INVALIDARG;
-	}
+void AudioInterface::refreshSessions(std::vector<sessionID>* sids) {
 
 	HRESULT hr = S_OK; //HRESULT is success/failure code (0 = success) of type long
 	int sessionCount = 0;
@@ -70,6 +62,7 @@ HRESULT AudioInterface::refreshSessions() {
 	IAudioSessionEnumerator* sessionEnumerator = nullptr; //to point to a session enumerator object
 	IAudioSessionControl* sControl = nullptr; //to point to a session object
 
+	sids->clear();
 	sessions.clear();
 	//Get the current list of sessions.
 	checkHR(hr = this->sessionManager->GetSessionEnumerator(&sessionEnumerator), "refreshSessions"); //Create sessionEnumerator object at sessionEnumerator
@@ -79,11 +72,17 @@ HRESULT AudioInterface::refreshSessions() {
 		sControl = nullptr;
 		checkHR(hr = sessionEnumerator->GetSession(i, &sControl), "refreshSessions 3"); //get next session pointer
 		this->sessions.push_back(Session(sControl));
+		sessionID  newSID;
+		newSID.procID = sessions[i].getProcessID();
+		newSID.procName = sessions[i].getProcessName();
+		sessions[i].setDim(settings.get("DimMult", DIM_MULT_DEFAULT));
+		sessions[i].setRampTime(settings.get("RampTime", RAMP_TIME_DEFAULT), 
+			settings.get("RefreshTime", REFRESH_TIME_DEFAULT));
+		sids->push_back(newSID);
 
 	}
 	std::cout << "Number of items in sessions vector: " << sessions.size() << std::endl;
 	safeReleaseAI(&sessionEnumerator);
-	return hr;
 }
 
 //	Title: printSessions();
@@ -114,7 +113,6 @@ void AudioInterface::printSessions() {
 }
 
 void AudioInterface::printVolumes() {
-	int max = this->volumes.size();
 	float vol = 1.f;
 	BOOL mute = FALSE;
 	DWORD sessionIdentifier;
@@ -140,15 +138,10 @@ void AudioInterface::changeVolume() {
 		printf_s("No sessions!");
 		return;
 	}
-	AudioInterface::printSessions();
-	printf_s("Please select which session volume you want to change: ");
-	int sesh = validate::getIntBetween(0, sessions.size() - 1);
-	printf_s("Enter a new volume between 0.0 and 1.0:");
-	double newVolume = validate::getDoubleBetween(0.0, 1.0);
-	sessions[sesh].setVolume(newVolume);
-	printf_s("Volume was set to %.3g", newVolume);
+//	sessions[sesh].setVolume(newVolume);
 }
 
+/* preserved for potential future use
 void AudioInterface::monitorMeter() {
 	//TODO: may need to adjust meter based on Master Volume
 	// Seems peak value is Master * Session Volume
@@ -178,64 +171,44 @@ void AudioInterface::monitorMeter() {
 		Sleep(timer);
 	}
 }
+*/
 
-void AudioInterface::addMuteKeyed() {
-	muteKeyList.clear();
-	int quit = 0;
-	float origin = 1.f;
-	while (true) {
-		printSessions();
-		std::cout << "Select the number of the program to add to the mute key list or enter -1 to return to main menu." << std::endl;
-		quit = validate::getIntBetween(-1, sessions.size());
-		if (quit == -1) {
+int AudioInterface::addMuteKeyed(sessionID *sid) {
+	int sessionAdded = 0;
+	for (auto it = sessions.begin(); it != sessions.end() && !sessionAdded; ++it) {
+		if (it->sessionIDCompare(sid)) {
+			muteKeyList.push_back(&(*it));
+			sessionAdded = 1;
 			break;
 		}
-		else {
-			muteKeyList.push_back(&sessions[quit]);
-			menu::clearScreen();
-			std::cout << "Program " << quit << " added to mute list." << std::endl;
-		}
 	}
+	return sessionAdded;
 }
 
-void AudioInterface::addMuteDependent() {
-	muteDependents.clear();
-	int quit = 0;
-	float origin = 1.f;
-	while (true) {
-		printSessions();
-		std::cout << "Select the number of the program to add to the mute dependent list or enter -1 to return to main menu." << std::endl;
-		quit = validate::getIntBetween(-1, sessions.size());
-		if (quit == -1) {
+ int AudioInterface::addMuteDependent(sessionID *sid) {
+	int sessionAdded = 0;
+	for (auto it = sessions.begin(); it != sessions.end() && !sessionAdded; ++it) {
+		if (it->sessionIDCompare(sid)) {
+			muteDependents.push_back(&(*it));
+			sessionAdded = 1;
 			break;
 		}
-		else {
-			muteDependents.push_back(&sessions[quit]);
-			menu::clearScreen();
-			std::cout << "Program " << quit << " added to mute list." << std::endl;
-		}
 	}
+	return sessionAdded;
 }
 
-void AudioInterface::addMuteMaster() {
-	muteMasters.clear();
-	int quit = 0;
-	float origin = 1.f;
-	while (true) {
-		printSessions();
-		std::cout << "Select the number of the program to add to the mute master list or enter -1 to return to main menu." << std::endl;
-		quit = validate::getIntBetween(-1, sessions.size());
-		if (quit == -1) {
+int AudioInterface::addMuteMaster(sessionID *sid) {
+	int sessionAdded = 0;
+	for (auto it = sessions.begin(); it != sessions.end() && !sessionAdded; ++it) {
+		if (it->sessionIDCompare(sid)) {
+			muteMasters.push_back(&(*it));
+			sessionAdded = 1;
 			break;
 		}
-		else {
-			muteMasters.push_back(&sessions[quit]);
-			menu::clearScreen();
-			std::cout << "Program " << quit << " added to mute list." << std::endl;
-		}
 	}
+	return sessionAdded;
 }
-
+/* #### Currently saved for any reference needs
 void AudioInterface::beginMuteListen() {
 	int waitTime = WAIT_TIME;
 	std::cout << "Once the listen loop is entered, use \\ to mute selected programs. Use F4 to exit the loop." << std::endl;
@@ -291,6 +264,7 @@ void AudioInterface::beginMuteListen() {
 	}
 	restoreVolumes();
 }
+*/
 
 void AudioInterface::restoreVolumes() {
 	for (auto it = muteDependents.begin(); it != muteDependents.end(); ++it) {
@@ -303,10 +277,11 @@ void AudioInterface::restoreVolumes() {
 
 int AudioInterface::dimMaxExceeded() {
 	for (auto it = muteMasters.begin(); it != muteMasters.end(); ++it) {
-		if ((*it)->getPeak() > dimThreshold) {
+		if ((*it)->getPeak() > settings.get("DimThreshold", DIM_THRESHOLD_DEFAULT)) {
 			return 1;
 		}
 	}
+	return 0;
 }
 
 int AudioInterface::adjustKeyDependents(int mute, int dim) {
@@ -323,4 +298,75 @@ int AudioInterface::adjustDimDependents(int mute, int dim) {
 	for (auto it = muteDependents.begin(); it != muteDependents.end(); ++it) {
 		isRamping = (isRamping || (*it)->smartVolume(mute, dim)) ? 1 : 0;
 	}
+	return isRamping;
+}
+
+void AudioInterface::clearLists() {
+	muteDependents.clear();
+	muteMasters.clear();
+	muteKeyList.clear();
+}
+
+
+void AudioInterface::loadSettings() {
+	if (!boost::filesystem::exists("settings.json")) {
+		settings.put("RefreshTime", REFRESH_TIME_DEFAULT);
+		settings.put("DimThreshold", DIM_THRESHOLD_DEFAULT);
+		settings.put("DimMult", DIM_MULT_DEFAULT);
+		settings.put("RampTime", RAMP_TIME_DEFAULT);
+		settings.put("MuteKey", MUTE_KEY_DEFAULT);
+		settings.put("QuitKey", QUIT_KEY_DEFAULT);
+		boost::property_tree::write_json("settings.json", settings);
+		return;
+	}
+	else {
+		int changed = 0;
+		boost::property_tree::read_json("settings.json", settings);
+		int refreshTime = settings.get("RefreshTime", REFRESH_TIME_DEFAULT);
+		if (refreshTime < REFRESH_MIN || refreshTime > REFRESH_MAX) {
+			settings.put("RefreshTime", REFRESH_TIME_DEFAULT);
+			changed = 1;
+		}
+		float dimThreshold = settings.get("DimThreshold", DIM_THRESHOLD_DEFAULT);
+		if (dimThreshold < THRESHOLD_MIN || dimThreshold > THRESHOLD_MAX) {
+			settings.put("DimThreshold", DIM_THRESHOLD_DEFAULT);
+			changed = 1;
+		}
+		float dimMult = settings.get("DimMult", DIM_MULT_DEFAULT);
+		if (dimMult < MULT_MIN || dimMult > MULT_MAX) {
+			settings.put("DimMult", DIM_MULT_DEFAULT);
+			changed = 1;
+		}
+		int ramp = settings.get("RampTime", RAMP_TIME_DEFAULT);
+		if (ramp < RAMP_MIN || ramp > RAMP_MAX) {
+			settings.put("RampTime", RAMP_TIME_DEFAULT);
+			changed = 1;
+		}
+		int muteKey = settings.get("MuteKey", MUTE_KEY_DEFAULT);
+		if (muteKey < KEY_MIN || muteKey > KEY_MAX) {
+			settings.put("MuteKey", MUTE_KEY_DEFAULT);
+			changed = 1;
+		}
+		int quitKey = settings.get("QuitKey", QUIT_KEY_DEFAULT);
+		if (quitKey < KEY_MIN || quitKey > KEY_MAX) {
+			settings.put("QuitKey", QUIT_KEY_DEFAULT);
+			changed = 1;
+		}
+		if (changed) {
+			boost::property_tree::write_json("settings.json", settings);
+		}
+	}
+
+}
+
+int AudioInterface::getMuteKey() {
+	return settings.get("MuteKey", MUTE_KEY_DEFAULT);
+}
+
+int AudioInterface::getQuitKey() {
+	return settings.get("QuitKey", QUIT_KEY_DEFAULT);
+}
+
+int AudioInterface::getRefreshTime() {
+	return settings.get("RefreshTime", REFRESH_TIME_DEFAULT);
 }

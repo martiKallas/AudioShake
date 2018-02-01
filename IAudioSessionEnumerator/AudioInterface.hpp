@@ -17,9 +17,36 @@
 #include <iostream>
 #include <Psapi.h>
 #include <vector>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/filesystem.hpp>
 
-#define WAIT_TIME 50
-#define DIM_LEVEL 0.02
+
+
+//settings defaults
+#define REFRESH_TIME_DEFAULT 50
+#define DIM_THRESHOLD_DEFAULT 0.02
+#define DIM_MULT_DEFAULT 0.50
+#define RAMP_TIME_DEFAULT 1000
+#define MUTE_KEY_DEFAULT VK_DOWN
+#define QUIT_KEY_DEFAULT VK_F4
+
+//settings limits
+#define REFRESH_MIN 5
+#define REFRESH_MAX 500
+#define THRESHOLD_MIN 0.001
+#define THRESHOLD_MAX 0.99
+#define MULT_MIN 0.0
+#define MULT_MAX 0.99
+#define RAMP_MIN 1
+#define RAMP_MAX 5000
+#define KEY_MIN 0x01
+#define KEY_MAX 0xFE
+
+
+
+
+//other
 #define NO_CHANGE -1
 
 //Safely release a COM ptr
@@ -31,38 +58,33 @@ template <class T> inline void safeReleaseAI(T **ppT) {
 }
 
 //Safely release a vector of COM ptrs
-template <class VTYPE> inline void vectorRelease(std::vector<VTYPE> *v) {
+template <class VTYPE> inline void comVectorRelease(std::vector<VTYPE> *v) {
 	for (std::vector<VTYPE>::size_type i = 0; i != v->size(); i++) {
 		safeReleaseAI(&(*v)[i]);
 	}
 	v->clear();
 }
 
+//Release all pointers in a std::vector that were dynamically allocated
+template <class VTYPE> inline void vectorClear(std::vector<VTYPE> *v) {
+	for (auto it = v->begin(); it != v->end(); ++it) {
+		delete (*it);
+	}
+	v->clear();
+}
 
 class AudioInterface {
 private:
 	IAudioSessionManager2 * sessionManager;
 	int numSessions;
 	std::vector<Session>  sessions;
-	float dimThreshold;
-
-	//TODO:remove these to END
-	std::vector<IAudioSessionControl *> sessionsControl;
-	std::vector<IAudioSessionControl2 *> sessionsControl2;
-	std::vector<ISimpleAudioVolume *> volumes;
-	std::vector<IAudioMeterInformation *> meters;
-	//END
+	boost::property_tree::ptree settings;
 
 	std::vector<Session *> muteKeyList;
 	std::vector<Session *> muteDependents;
 	std::vector<Session *> muteMasters;
 	std::vector<double> originalVolume;
-
-	//	Title: getProcessName
-	//	Description: Gets the .exe name for a given PID
-	//	Parameters: pointer to processID, address of a TCHAR buffer, length of TCHAR buffer
-	//	Postconditions: None
-	HRESULT getProcessName(DWORD * processID, TCHAR *processName, int bufferLength);
+	void loadSettings();
 
 public:
 	//	Title: AudioInterface
@@ -73,7 +95,7 @@ public:
 
 	//	Description: Releases all current COM pointers to session interfaces and re-establishes current list
 	//		of audio sessions with the appropriate pointers in sessionsControl and sessionsControl2
-	HRESULT refreshSessions();
+	void refreshSessions(std::vector<sessionID> *sids);
 
 	//	Description: Prints the PID and .exe name for all of the active sessions.
 	void printSessions();
@@ -89,36 +111,47 @@ public:
 	// Description: Work in progress, allows the user to change the volume of a specific program
 	void changeVolume();
 
-	//Description: Work in progress, currently allows user to press enter to get a peak meter value
-	void monitorMeter();
-
 	//Description: Work in progress, adds a programs to a list. All programs on mute list get muted on key press
-	void addMuteKeyed();
+	//	Returns 1 if session was added or 0 if session was not added
+	int addMuteKeyed(sessionID* sid);
 
 	//Description: Adds program to list where programs on the dependent list will be muted when any program on the
 	//	master list is producing significant volume.
-	void addMuteDependent();
+	//	Returns 1 if session was added or 0 if session was not added
+	int addMuteDependent(sessionID* sid);
 
 	//Description: Adds program to list where programs on the master list will be muted when any program on the
 	//	master list is producing significant volume.
-	void addMuteMaster();
+	//	Returns 1 if session was added or 0 if session was not added
+	int addMuteMaster(sessionID* sid);
 	
-	//Description: Work in progress, currently listens for a hard-coded button press to mute programs in
-	//	the mute list.
-	void beginMuteListen();
-
-
 	//Description: Restores volumes to original on quit
 	void restoreVolumes();
 	
 	//Checks if any of the session in MuteMasters have exceeded the threshold
+	//	Returns 1 if this is the case.
 	int dimMaxExceeded();
 
-	//Calls smartVolume for muteKey Sessions
+	//Calls smartVolume for muteKey Sessions. This should only be called if the
+	//	state of the mute key has changed.
 	int adjustKeyDependents(int mute, int dim);
 
-	//Calls smartVolume for dim Sessions
+	//Calls smartVolume for dim Sessions. This should only be called if the volumes
+	//	are ramping up from being dimmed/muted or if the state of the Master program 
+	//	list has changed (IE the programs in the master list have stopped or started 
+	//	making noise above the dim threshold).
 	int adjustDimDependents(int mute, int dim);
+	
+	//Clears muteKeyList, muteDependents and muteMasters lists. encapsulates functions
+	//	necessary for session list refreshes and beginning loops.
+	void clearLists();
+
+	int getMuteKey();
+
+	int getQuitKey();
+
+	int getRefreshTime();
+
 };
 
 
