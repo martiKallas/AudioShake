@@ -1,0 +1,8 @@
+{
+    "RefreshTime": "50",
+    "DimThreshold": "0.02",
+    "DimMult": "0.5",
+    "RampTime": "1000",
+    "MuteKey": "40",
+    "QuitKey": "115"
+}

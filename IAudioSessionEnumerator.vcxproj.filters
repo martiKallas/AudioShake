@@ -21,13 +21,13 @@
     <ClCompile Include="IAudioSessionEnumerator\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="IAudioSessionEnumerator\Menu.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="IAudioSessionEnumerator\Validation.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="IAudioSessionEnumerator\Session.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IAudioSessionEnumerator\ListenLoop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IAudioSessionEnumerator\GUISession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,22 +35,14 @@
     <ClInclude Include="IAudioSessionEnumerator\AudioInterface.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="IAudioSessionEnumerator\Menu.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IAudioSessionEnumerator\Validation.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="IAudioSessionEnumerator\Session.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="IAudioSessionEnumerator\IAudioSessionEnumerator.vcxproj">
+    <ClInclude Include="IAudioSessionEnumerator\ListenLoop.hpp">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="IAudioSessionEnumerator\IAudioSessionEnumerator.vcxproj.filters">
+    </ClInclude>
+    <ClInclude Include="IAudioSessionEnumerator\GUISession.hpp">
       <Filter>Source Files</Filter>
-    </None>
+    </ClInclude>
   </ItemGroup>
 </Project>

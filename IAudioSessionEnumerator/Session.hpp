@@ -9,9 +9,6 @@
 #include <string>
 #include <stdlib.h>
 
-#define DIM_MULT 0.5
-#define RAMP_STEPS 20
-
 //Safely release a COM ptr
 template <class T> inline void safeRelease(T *ppT) {
 	if (ppT) {
@@ -31,6 +28,11 @@ inline void checkHR(HRESULT hres, std::string location) {
 	}
 }
 
+struct sessionID {
+	DWORD procID;
+	std::string procName;
+};
+
 class Session
 {
 public:
@@ -48,6 +50,11 @@ public:
 	BOOL getMuted();
 	void setDim(float mult);
 	float getDim();
+	const bool sessionIDCompare(sessionID* sid);
+
+	//Expects both settings in milliseconds setRampTIme calculates the
+	//	number of ramp steps necessary given the rampTime and refreshTime
+	void setRampTime(int rampTime, int refreshTime);
 
 	//Takes ints -1, 0, 1. -1 indicates no change. 0 = false, 1 = true
 	//	Adjusts volume based on whether it is currently dimmed and/or muted
@@ -68,6 +75,7 @@ private:
 	int isRamping;
 	GUID groupingID;
 	float currentVol;
+	float rampSteps;
 
 	//Audio Interfaces:
 	IAudioSessionControl * sControl;
@@ -76,7 +84,8 @@ private:
 	IAudioMeterInformation * sMeter;
 
 	//Other
-	HRESULT findProcessName(DWORD * processID, LPSTR processName, LPSTR fileName);
+	HRESULT findProcessName(DWORD * processID, LPSTR processName, LPSTR fileName, PDWORD size);
+
 
 
 };
