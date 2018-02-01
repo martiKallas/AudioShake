@@ -30,6 +30,11 @@ private:
 	void OnRun(wxCommandEvent& event);
 	void OnStop(wxCommandEvent& event);
 	void ClearElements();
+	void RunDisable();
+	void StopEnable();
+	wxButton * runB;
+	wxButton * stopB;
+	wxButton * refreshB;
 	wxFlexGridSizer *table;
 	wxSizer *mainSizer;
 	wxPanel *page;
@@ -108,11 +113,11 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	
 	 //Create Add/Delete buttons -> now run/stop
 	wxStaticBoxSizer *buttons = new wxStaticBoxSizer(wxHORIZONTAL, page, wxT(""));
-	wxButton *runB = new wxButton(page, ID_Run, wxT("Run"));
+	runB = new wxButton(page, ID_Run, wxT("Run"));
 	buttons->Add(runB);
-	wxButton *stopB = new wxButton(page, ID_Stop, wxT("Stop"));
+	stopB = new wxButton(page, ID_Stop, wxT("Stop"));
 	buttons->Add(stopB);
-	wxButton *refreshB = new wxButton(page, ID_Refresh, wxT("Refresh"));
+	refreshB = new wxButton(page, ID_Refresh, wxT("Refresh"));
 	buttons->Add(refreshB);
 	mainSizer->Add(buttons);
 
@@ -159,6 +164,7 @@ void MyFrame::OnRun(wxCommandEvent& event) {
 	if (loopRunning) {
 		lThread->setLoopVar(0);
 		loopRunning = false;
+		StopEnable();
 	}
 	lThread = new ListenLoop(this, &audioI);
 	lThread->setMuteKey(audioI.getMuteKey());
@@ -179,6 +185,8 @@ void MyFrame::OnRun(wxCommandEvent& event) {
 		}
 	}		
 	loopRunning = true;
+	SetStatusText("Listening...");
+	RunDisable();
 	if (lThread->Run() != wxTHREAD_NO_ERROR) {
 		wxLogError(wxT("Can't start thread!"));
 	}
@@ -188,6 +196,7 @@ void MyFrame::OnStop(wxCommandEvent& event) {
 	//ListenLoop is a detached thread. Setting loopVar = 0 will terminate the thread
 	lThread->setLoopVar(0);
 	loopRunning = false;
+	StopEnable();
 }
 
 void MyFrame::OnRefresh(wxCommandEvent& event) {
@@ -224,4 +233,14 @@ void MyFrame::ClearElements() {
 		delete *it;
 	}
 	sessionElements.clear();
+}
+
+void MyFrame::RunDisable() {
+	runB->Disable();
+	refreshB->Disable();
+}
+
+void MyFrame::StopEnable() {
+	runB->Enable();
+	refreshB->Enable();
 }
