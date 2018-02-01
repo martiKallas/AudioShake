@@ -142,6 +142,8 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	this->SetSizeHints(minPageSize);
 	this->SetInitialSize(minPageSize);
 	page->SetSizerAndFit(mainSizer);
+	
+	OnRefresh(wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED));
 
 	//	notebook->AddPage(page, wxT("Main"));
 	//	notebook->CalcSizeFromPage(table->CalcMin());
@@ -238,9 +240,15 @@ void MyFrame::ClearElements() {
 void MyFrame::RunDisable() {
 	runB->Disable();
 	refreshB->Disable();
+	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it) {
+		(*it)->disableButtons();
+	}
 }
 
 void MyFrame::StopEnable() {
 	runB->Enable();
 	refreshB->Enable();
+	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it) {
+		(*it)->enableButtons();
+	}
 }

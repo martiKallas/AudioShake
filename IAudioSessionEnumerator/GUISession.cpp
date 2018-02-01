@@ -45,3 +45,15 @@ bool GUISession::dependentBoxChecked() {
 sessionID* GUISession::getSessionID() {
 	return &sID;
 }
+	
+void GUISession::disableButtons() {
+	pKeyBox->Disable();
+	pMasterBox->Disable();
+	pDependentBox->Disable();
+}
+
+void GUISession::enableButtons() {
+	pKeyBox->Enable();
+	pMasterBox->Enable();
+	pDependentBox->Enable();
+}

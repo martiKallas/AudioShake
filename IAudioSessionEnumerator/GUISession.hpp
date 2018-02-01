@@ -21,4 +21,6 @@ public:
 	wxCheckBox* getKeyBox();
 	wxCheckBox* getMasterBox();
 	wxCheckBox* getDependentBox();
+	void disableButtons();
+	void enableButtons();
 };
