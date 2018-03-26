@@ -18,18 +18,14 @@ Session::Session(IAudioSessionControl * sControl) {
 	checkHR(hr = sControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sControl2), "Session constructor 1"); //get sessionControl2 interface
 	checkHR(hr = sControl2->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&sVolume), "Session constructor 2"); //get volume control for the session
 	checkHR(hr = sControl2->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&sMeter), "Session constructor 3"); //get meter for the session
-	//Other useful information
+
+	//find process name and process id
 	DWORD tempID;
 	hr = sControl2->GetProcessId(&tempID);
 	this->processID = tempID;
-	char buffer[MAX_PATH];
-	char fileName[_MAX_FNAME];
-	DWORD size = MAX_PATH;
-	hr = findProcessName(&this->processID, buffer, fileName, &size);
-	if (size == MAX_PATH) {
-		processName = "System";
-	}
-	else this->processName = std::string(fileName);
+	findProcessName();
+
+	//set default values
 	sVolume->GetMasterVolume(&this->defaultVolume);
 	float newVol = defaultVolume*0.50;
 	if (newVol > 1.0) newVol = 1.0;
@@ -44,27 +40,36 @@ Session::Session(IAudioSessionControl * sControl) {
 Session::~Session(){
 }
 
- HRESULT Session::findProcessName(DWORD * processID, LPSTR path, LPSTR fileName, PDWORD size) {
+void Session::findProcessName() {
+	char buffer[MAX_PATH];
+	char fileName[_MAX_FNAME];
+	DWORD size = MAX_PATH;
+
+	//get process handle
 	HANDLE processHandle = OpenProcess(
 		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
 		FALSE,
-		*processID
+		this->processID
 	);
+
 	if (processHandle) {
-		QueryFullProcessImageNameA(processHandle, 0, path, size);
-		
-		GetModuleBaseNameA(processHandle, NULL, path, *size);
+		QueryFullProcessImageNameA(processHandle, 0, buffer, &size);
+		GetModuleBaseNameA(processHandle, NULL, buffer, size);
 		char drive[_MAX_DRIVE];
 		char dir[_MAX_DIR];
 		char ext[_MAX_EXT];
-		_splitpath_s(path, drive, _MAX_DRIVE, dir, _MAX_DIR, fileName, _MAX_FNAME, ext, _MAX_EXT);
-		
+		_splitpath_s(buffer, drive, _MAX_DRIVE, dir, _MAX_DIR, fileName, _MAX_FNAME, ext, _MAX_EXT);
 
 		//GetProcessImageFileNameA(processHandle, fileName, _MAX_FNAME);
 	}
-	else return E_FAIL;
+	//fail
+	else { this->processName = "Name Failure"; return; }
 
-	return S_OK;
+	if (size == MAX_PATH) {
+		this->processName = "System";
+	}
+	else this->processName = std::string(fileName);
+
 }
 
 DWORD Session::getProcessID() {
@@ -109,6 +114,7 @@ void Session::restoreVolume() {
 
 void Session::setDim(float dim) {
 	float newVol = defaultVolume*dim;
+	//check float within bounds
 	if (newVol > 1.0) newVol = 1.0;
 	else if (newVol < 0.0) newVol = 0.0;
 	dimVolume = newVol;;
@@ -120,21 +126,23 @@ float Session::getDim() {
 
 int Session::smartVolume(int mute, int dim) {
 	if (mute == 1 && !isMuted) {
-		std::cout << "Volume set to 0 in session" << std::endl;
+		//std::cout << "Volume set to 0 in session" << std::endl;
 		sVolume->SetMasterVolume(0.0, NULL);
 		isMuted = 1;
 		isRamping = 0;
 	}
 	else if (mute == 0 && isMuted) {
 		isMuted = 0;
-		if (!isDimmed || isRamping) { //restore original volume
-			std::cout << "Volume restored from mute" << std::endl;
+		//restore original volume
+		if (!isDimmed || isRamping) { 
+			//std::cout << "Volume restored from mute" << std::endl;
 			currentVol = dimVolume;
 			sVolume->SetMasterVolume(currentVol, NULL);
 			isRamping = 1;
 		}
-		else { //restore dimmed volume
-			std::cout << "Volume restored to dim level" << std::endl;
+		//restore dimmed volume
+		else { 
+			//std::cout << "Volume restored to dim level" << std::endl;
 			sVolume->SetMasterVolume(currentVol, NULL);
 			isRamping = 1;
 		}
@@ -143,7 +151,7 @@ int Session::smartVolume(int mute, int dim) {
 		isDimmed = 1;
 		isRamping = 0;
 		if (!isMuted) {
-			std::cout << "Volume dimmed" << std::endl;
+			//std::cout << "Volume dimmed" << std::endl;
 			currentVol = dimVolume;
 			sVolume->SetMasterVolume(currentVol, NULL);
 		}
@@ -151,6 +159,7 @@ int Session::smartVolume(int mute, int dim) {
 
 	else if (dim == 0 && (isDimmed || isRamping)) {
 		if (!isMuted) {
+			//calculate volume change per rampSteps
 			currentVol += (defaultVolume - dimVolume) / rampSteps;
 			isRamping = 1;
 			isDimmed = 0;
@@ -170,5 +179,6 @@ const bool Session::sessionIDCompare(sessionID* sid) {
 }
 
 void Session::setRampTime(int rampTime, int refreshTime) {
+	//number of ListenLoop refreshes to get to max volume
 	rampSteps = rampTime / refreshTime;
 }

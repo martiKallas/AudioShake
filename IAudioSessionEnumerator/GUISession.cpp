@@ -4,6 +4,7 @@ GUISession::GUISession(wxPanel* parent, sessionID sid) {
 	pParent = parent;
 	sID = sid;
 	std::string name = sid.procName;
+	//Below does not add button to panel. Must be done separately
 	pName = new wxStaticText(parent, wxID_ANY, name);
 	pKeyBox = new wxCheckBox(parent, wxID_ANY, wxT(""));
 	pMasterBox = new wxCheckBox(parent, wxID_ANY, wxT(""));
