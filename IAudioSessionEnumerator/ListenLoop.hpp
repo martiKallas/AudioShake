@@ -14,13 +14,18 @@ private:
 	int muteKey;
 	int quitKey;
 	int waitTime;
-public:
+	int mutePress;
+	int keyUp;
 	wxCriticalSection loopCritSect;
+public:
 	void setLoopVar(int i);
 	int getLoopVar();
 	ListenLoop(wxFrame* parent, AudioInterface* auI);
 	virtual wxThread::ExitCode Entry();
+	virtual wxThread::ExitCode EntryHoldKey();
 	void setMuteKey(int virutalKey);
 	void setQuitKey(int virtualKey);
 	void setRefreshTime(int waitTime);
+	void setMutePress(int i);
+	int getMutePress();
 };

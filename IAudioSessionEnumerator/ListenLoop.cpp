@@ -25,6 +25,70 @@ wxThread::ExitCode ListenLoop::Entry() {
 	int isMuted = 0;
 	int isDimmed = 0;
 	int isRamping = 0;
+	int keyUp = 1;
+	int keyState = 0;
+
+	int dimOn = 0;
+	while (this->getLoopVar()) {
+		dimOn = 0;
+		if (pAudioI->dimMaxExceeded()) {
+			dimOn = 1;
+		}
+		keyState = GetAsyncKeyState(muteKey);
+		if (keyState && keyUp) {
+			pParent->SetStatusText("Key Detected");
+			setMutePress(1);
+			keyUp = 0;
+		}
+		else if (!keyState && !keyUp) keyUp = 1;
+
+		//if there is a change, update the volumes
+		if (getMutePress()) {
+			if (!isMuted) {
+				isMuted = 1;
+				pParent->SetStatusText("Muted");
+			}
+			else {
+				isMuted = 0;
+				pParent->SetStatusText("Listening...");
+			}
+			isRamping = pAudioI->adjustKeyDependents(isMuted, NO_CHANGE);
+			setMutePress(0);
+		}
+
+		if (dimOn != isDimmed) {
+			isDimmed = dimOn;
+			isRamping = pAudioI->adjustDimDependents(NO_CHANGE, dimOn);
+			if (isDimmed) {
+				pParent->SetStatusText("Dimmed");
+			}
+		}
+		//if the volumes are ramping, adjust the volumes until they aren't ramping
+		else if (isRamping) {
+			isRamping = pAudioI->adjustDimDependents(NO_CHANGE, dimOn);
+			isRamping = (isRamping || pAudioI->adjustKeyDependents(NO_CHANGE, dimOn)) ? 1 : 0;
+			if (!isRamping) {
+				pParent->SetStatusText("Listening...");
+			}
+		}
+
+		if (GetAsyncKeyState(VK_F4)) this->setLoopVar(0);
+		Sleep(waitTime);
+
+	}
+	pAudioI->restoreVolumes();
+	pParent->SetStatusText("Loop Stopped");
+
+	return (wxThread::ExitCode)0;
+}
+
+wxThread::ExitCode ListenLoop::EntryHoldKey() {
+	pParent->SetStatusText("Listening...");
+	//TODO: get settings from file
+	this->setLoopVar(1);
+	int isMuted = 0;
+	int isDimmed = 0;
+	int isRamping = 0;
 
 	int dimOn = 0;
 	int muteDown = 0;
@@ -90,3 +154,13 @@ void ListenLoop::setRefreshTime(int time) {
 	if (waitTime < REFRESH_MIN || waitTime > REFRESH_MAX) waitTime = REFRESH_TIME_DEFAULT;
 }
 
+void ListenLoop::setMutePress(int i) {
+	wxCriticalSectionLocker locker(loopCritSect);
+	mutePress = i;
+}
+
+
+int ListenLoop::getMutePress() {
+	wxCriticalSectionLocker locker(loopCritSect);
+	return mutePress;
+}
