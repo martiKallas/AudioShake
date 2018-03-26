@@ -151,7 +151,6 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 
 	//create settings tab
 	//	page = new wxPanel(notebook);
-
 	//	notebook->AddPage(page, wxT("Settings"));
 }
 

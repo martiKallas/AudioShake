@@ -1,8 +1,6 @@
-/*
-* Title: Enumerator
-* Author: Marti Kallas
-* Date: 12/14/2016
-* Description: Simple practice for using Windows Core Audio APIs.
+/* Author: Marti Kallas
+*  Date: 12/14/2016
+*  Description: Simple practice for using Windows Core Audio APIs.
 *	This particular example uses the IAudioSessionEnumerator to list
 *	the current audio sessions. May be expanded in the future to be
 *	used with more complex programs.
@@ -43,9 +41,6 @@
 #define KEY_MIN 0x01
 #define KEY_MAX 0xFE
 
-
-
-
 //other
 #define NO_CHANGE -1
 
@@ -83,67 +78,66 @@ private:
 	std::vector<Session *> muteKeyList;
 	std::vector<Session *> muteDependents;
 	std::vector<Session *> muteMasters;
-	std::vector<double> originalVolume;
+	/* Description: */
 	void loadSettings();
 
 public:
-	//	Title: AudioInterface
-	//	Description: Default constructor. Sets pointer variables = nullptr.
 	AudioInterface();
 	~AudioInterface();
 	HRESULT initializeManager();
 
-	//	Description: Releases all current COM pointers to session interfaces and re-establishes current list
-	//		of audio sessions with the appropriate pointers in sessionsControl and sessionsControl2
+	/* Description: Releases all current COM pointers to session interfaces and re-establishes current list
+		of audio sessions with the appropriate pointers in sessionsControl and sessionsControl2
+	*/
 	void refreshSessions(std::vector<sessionID> *sids);
-
-	//	Description: Prints the PID and .exe name for all of the active sessions.
-	void printSessions();
-
-	//	Description: Work in progress... want to be able to find and print volumes of all sessions.
-	void printVolumes();
 
 	//	Description: Gets grouping GUID for sessions... hopefully to initialize ISimpleAudioVolume
 	//	Parameters: pointer to GUID to be updated, and int specifying the index in sessionsControl vector
 	// ###################### REMOVED UNTIL NEEDED #####################################
 	//GUID getGroupingGUID(GUID * groupingGUID, int i);
 
-	// Description: Work in progress, allows the user to change the volume of a specific program
-	void changeVolume();
-
-	//Description: Work in progress, adds a programs to a list. All programs on mute list get muted on key press
-	//	Returns 1 if session was added or 0 if session was not added
+	/* Description: Work in progress, adds a programs to a list. All programs on mute list get muted on key press
+		Returns 1 if session was added or 0 if session was not added
+	*/
 	int addMuteKeyed(sessionID* sid);
 
-	//Description: Adds program to list where programs on the dependent list will be muted when any program on the
-	//	master list is producing significant volume.
-	//	Returns 1 if session was added or 0 if session was not added
+	/* Description: Adds program to list where programs on the dependent list will be muted when any program on the
+		master list is producing significant volume.
+		Returns 1 if session was added or 0 if session was not added
+	*/
 	int addMuteDependent(sessionID* sid);
 
-	//Description: Adds program to list where programs on the master list will be muted when any program on the
-	//	master list is producing significant volume.
-	//	Returns 1 if session was added or 0 if session was not added
+	/* Description: Adds program to list where programs on the master list will be muted when any program on the
+		master list is producing significant volume.
+		Returns 1 if session was added or 0 if session was not added
+	*/
 	int addMuteMaster(sessionID* sid);
 	
-	//Description: Restores volumes to original on quit
+	/* Description: Restores volumes to defaultVolume on quit
+		Calls restoreVolume() for all Sessions.
+	*/
 	void restoreVolumes();
 	
-	//Checks if any of the session in MuteMasters have exceeded the threshold
-	//	Returns 1 if this is the case.
+	/* Description: Checks if any of the session in MuteMasters have exceeded the threshold.
+		Returns 1 if this is the case.
+	*/
 	int dimMaxExceeded();
 
-	//Calls smartVolume for muteKey Sessions. This should only be called if the
-	//	state of the mute key has changed.
+	/* Description: Calls smartVolume for muteKey Sessions. This should only be called if the
+		state of the mute key has changed.
+	*/
 	int adjustKeyDependents(int mute, int dim);
 
-	//Calls smartVolume for dim Sessions. This should only be called if the volumes
-	//	are ramping up from being dimmed/muted or if the state of the Master program 
-	//	list has changed (IE the programs in the master list have stopped or started 
-	//	making noise above the dim threshold).
+	/* Description: Calls smartVolume for dim Sessions. This should only be called if the volumes
+		are ramping up from being dimmed/muted or if the state of the Master program 
+		list has changed (IE the programs in the master list have stopped or started 
+		making noise above the dim threshold).
+	*/
 	int adjustDimDependents(int mute, int dim);
 	
-	//Clears muteKeyList, muteDependents and muteMasters lists. encapsulates functions
-	//	necessary for session list refreshes and beginning loops.
+	/* Description: Clears muteKeyList, muteDependents and muteMasters lists. encapsulates functions
+		necessary for session list refreshes and beginning loops.
+	*/
 	void clearLists();
 
 	int getMuteKey();
