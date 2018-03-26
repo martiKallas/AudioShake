@@ -2,7 +2,8 @@
 
 void ListenLoop::setLoopVar(int i) {
 	wxCriticalSectionLocker locker(loopCritSect);
-	loopOn = i;
+	if (i) this->loopOn = 1;
+	else this->loopOn = 0;
 }
 
 int ListenLoop::getLoopVar() {
@@ -20,16 +21,16 @@ ListenLoop::ListenLoop(wxFrame* parent, AudioInterface* auI) {
 
 wxThread::ExitCode ListenLoop::Entry() {
 	pParent->SetStatusText("Listening...");
-	//TODO: get settings from file
 	this->setLoopVar(1);
 	int isMuted = 0;
 	int isDimmed = 0;
 	int isRamping = 0;
 	int keyUp = 1;
 	int keyState = 0;
-
 	int dimOn = 0;
+	//begin listen loop
 	while (this->getLoopVar()) {
+		//TODO: look into cleaning up conditionals for simpler logic - ideally with multi-loop
 		dimOn = 0;
 		if (pAudioI->dimMaxExceeded()) {
 			dimOn = 1;
@@ -40,9 +41,10 @@ wxThread::ExitCode ListenLoop::Entry() {
 			setMutePress(1);
 			keyUp = 0;
 		}
+		//detect when key is released
 		else if (!keyState && !keyUp) keyUp = 1;
 
-		//if there is a change, update the volumes
+		//if there is a change to key state, update the volumes
 		if (getMutePress()) {
 			if (!isMuted) {
 				isMuted = 1;
@@ -55,7 +57,7 @@ wxThread::ExitCode ListenLoop::Entry() {
 			isRamping = pAudioI->adjustKeyDependents(isMuted, NO_CHANGE);
 			setMutePress(0);
 		}
-
+		//if a "Listen To" program exceeded volume threshold, dim volume
 		if (dimOn != isDimmed) {
 			isDimmed = dimOn;
 			isRamping = pAudioI->adjustDimDependents(NO_CHANGE, dimOn);
@@ -84,12 +86,10 @@ wxThread::ExitCode ListenLoop::Entry() {
 
 wxThread::ExitCode ListenLoop::EntryHoldKey() {
 	pParent->SetStatusText("Listening...");
-	//TODO: get settings from file
 	this->setLoopVar(1);
 	int isMuted = 0;
 	int isDimmed = 0;
 	int isRamping = 0;
-
 	int dimOn = 0;
 	int muteDown = 0;
 	while (this->getLoopVar()) {
