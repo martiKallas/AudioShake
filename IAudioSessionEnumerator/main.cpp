@@ -62,7 +62,7 @@ wxIMPLEMENT_APP(MyApp);
 
 //Define OnInit() to create windows or show a splash screen
 bool MyApp::OnInit() {
-	MyFrame *frame = new MyFrame("Hello World", wxPoint(50, 50), wxSize(450, 340));
+	MyFrame *frame = new MyFrame("AudioShake v0.0.1", wxPoint(50, 50), wxSize(450, 340));
 	frame->Show(true);
 	return true;
 }
@@ -91,7 +91,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	SetMenuBar(menuBar);
 	*/
 	CreateStatusBar();
-	SetStatusText("Welcome to wxWidgets!");
+	SetStatusText("Welcome to AudioShake!");
 
 	//create tabs
 	//wxNotebook *notebook = new wxNotebook(this, wxID_ANY);
@@ -160,6 +160,7 @@ void MyFrame::OnExit(wxCommandEvent& event) {
 		lThread->setLoopVar(0);
 	}
 	Close(true);
+	loopRunning = false;
 }
 
 void MyFrame::OnRun(wxCommandEvent& event) {
@@ -196,9 +197,11 @@ void MyFrame::OnRun(wxCommandEvent& event) {
 
 void MyFrame::OnStop(wxCommandEvent& event) {
 	//ListenLoop is a detached thread. Setting loopVar = 0 will terminate the thread
-	lThread->setLoopVar(0);
+	if (loopRunning) {
+		lThread->setLoopVar(0);
+		StopEnable();
+	}
 	loopRunning = false;
-	StopEnable();
 }
 
 void MyFrame::OnRefresh(wxCommandEvent& event) {
