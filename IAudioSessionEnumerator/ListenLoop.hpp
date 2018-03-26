@@ -22,6 +22,7 @@ public:
 	int getLoopVar();
 	ListenLoop(wxFrame* parent, AudioInterface* auI);
 	virtual wxThread::ExitCode Entry();
+	//TODO: add EntryHoldKey option
 	virtual wxThread::ExitCode EntryHoldKey();
 	void setMuteKey(int virutalKey);
 	void setQuitKey(int virtualKey);
