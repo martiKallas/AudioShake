@@ -4,6 +4,7 @@ GUISession::GUISession(wxPanel* parent, sessionID sid) {
 	pParent = parent;
 	sID = sid;
 	std::string name = sid.procName;
+	//Below does not add button to panel. Must be done separately
 	pName = new wxStaticText(parent, wxID_ANY, name);
 	pKeyBox = new wxCheckBox(parent, wxID_ANY, wxT(""));
 	pMasterBox = new wxCheckBox(parent, wxID_ANY, wxT(""));
@@ -44,4 +45,16 @@ bool GUISession::dependentBoxChecked() {
 
 sessionID* GUISession::getSessionID() {
 	return &sID;
+}
+	
+void GUISession::disableButtons() {
+	pKeyBox->Disable();
+	pMasterBox->Disable();
+	pDependentBox->Disable();
+}
+
+void GUISession::enableButtons() {
+	pKeyBox->Enable();
+	pMasterBox->Enable();
+	pDependentBox->Enable();
 }

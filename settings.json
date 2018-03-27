@@ -3,6 +3,6 @@
     "DimThreshold": "0.02",
     "DimMult": "0.5",
     "RampTime": "1000",
-    "MuteKey": "40",
+    "MuteKey": "190",
     "QuitKey": "115"
 }

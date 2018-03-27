@@ -30,6 +30,11 @@ private:
 	void OnRun(wxCommandEvent& event);
 	void OnStop(wxCommandEvent& event);
 	void ClearElements();
+	void RunDisable();
+	void StopEnable();
+	wxButton * runB;
+	wxButton * stopB;
+	wxButton * refreshB;
 	wxFlexGridSizer *table;
 	wxSizer *mainSizer;
 	wxPanel *page;
@@ -57,7 +62,7 @@ wxIMPLEMENT_APP(MyApp);
 
 //Define OnInit() to create windows or show a splash screen
 bool MyApp::OnInit() {
-	MyFrame *frame = new MyFrame("Hello World", wxPoint(50, 50), wxSize(450, 340));
+	MyFrame *frame = new MyFrame("AudioShake v0.0.1", wxPoint(50, 50), wxSize(450, 340));
 	frame->Show(true);
 	return true;
 }
@@ -86,7 +91,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	SetMenuBar(menuBar);
 	*/
 	CreateStatusBar();
-	SetStatusText("Welcome to wxWidgets!");
+	SetStatusText("Welcome to AudioShake!");
 
 	//create tabs
 	//wxNotebook *notebook = new wxNotebook(this, wxID_ANY);
@@ -108,11 +113,11 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	
 	 //Create Add/Delete buttons -> now run/stop
 	wxStaticBoxSizer *buttons = new wxStaticBoxSizer(wxHORIZONTAL, page, wxT(""));
-	wxButton *runB = new wxButton(page, ID_Run, wxT("Run"));
+	runB = new wxButton(page, ID_Run, wxT("Run"));
 	buttons->Add(runB);
-	wxButton *stopB = new wxButton(page, ID_Stop, wxT("Stop"));
+	stopB = new wxButton(page, ID_Stop, wxT("Stop"));
 	buttons->Add(stopB);
-	wxButton *refreshB = new wxButton(page, ID_Refresh, wxT("Refresh"));
+	refreshB = new wxButton(page, ID_Refresh, wxT("Refresh"));
 	buttons->Add(refreshB);
 	mainSizer->Add(buttons);
 
@@ -137,6 +142,8 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	this->SetSizeHints(minPageSize);
 	this->SetInitialSize(minPageSize);
 	page->SetSizerAndFit(mainSizer);
+	
+	OnRefresh(wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED));
 
 	//	notebook->AddPage(page, wxT("Main"));
 	//	notebook->CalcSizeFromPage(table->CalcMin());
@@ -144,7 +151,6 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 
 	//create settings tab
 	//	page = new wxPanel(notebook);
-
 	//	notebook->AddPage(page, wxT("Settings"));
 }
 
@@ -153,12 +159,14 @@ void MyFrame::OnExit(wxCommandEvent& event) {
 		lThread->setLoopVar(0);
 	}
 	Close(true);
+	loopRunning = false;
 }
 
 void MyFrame::OnRun(wxCommandEvent& event) {
 	if (loopRunning) {
 		lThread->setLoopVar(0);
 		loopRunning = false;
+		StopEnable();
 	}
 	lThread = new ListenLoop(this, &audioI);
 	lThread->setMuteKey(audioI.getMuteKey());
@@ -179,6 +187,8 @@ void MyFrame::OnRun(wxCommandEvent& event) {
 		}
 	}		
 	loopRunning = true;
+	SetStatusText("Listening...");
+	RunDisable();
 	if (lThread->Run() != wxTHREAD_NO_ERROR) {
 		wxLogError(wxT("Can't start thread!"));
 	}
@@ -186,7 +196,10 @@ void MyFrame::OnRun(wxCommandEvent& event) {
 
 void MyFrame::OnStop(wxCommandEvent& event) {
 	//ListenLoop is a detached thread. Setting loopVar = 0 will terminate the thread
-	lThread->setLoopVar(0);
+	if (loopRunning) {
+		lThread->setLoopVar(0);
+		StopEnable();
+	}
 	loopRunning = false;
 }
 
@@ -224,4 +237,20 @@ void MyFrame::ClearElements() {
 		delete *it;
 	}
 	sessionElements.clear();
+}
+
+void MyFrame::RunDisable() {
+	runB->Disable();
+	refreshB->Disable();
+	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it) {
+		(*it)->disableButtons();
+	}
+}
+
+void MyFrame::StopEnable() {
+	runB->Enable();
+	refreshB->Enable();
+	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it) {
+		(*it)->enableButtons();
+	}
 }

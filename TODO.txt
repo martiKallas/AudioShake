@@ -4,8 +4,6 @@ Check that settings names exist
 
 Dynamically update program list without refreshing
 
-Add toggle mute key option (may need a new loop)
-
 Allow adding and removing programs from the loop lists while listening
 
 Allow multiple listening loops

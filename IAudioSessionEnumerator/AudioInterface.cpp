@@ -47,13 +47,9 @@ HRESULT AudioInterface::initializeManager() {
 	return hr;
 }
 
-//	Title: refreshSessions();
-//	Description: Populates the session vectors for AudioInterface
-//	Preconditions: Initialize sessionManager
-//	Postconditions: None
-//  TODO: implement with a sessionManager
-//  TODO: document function
-//	TODO: update appropriate variables to class specific variables
+/* Description: Populates the session vectors for AudioInterface
+*  Preconditions: Initialize sessionManager
+*/
 void AudioInterface::refreshSessions(std::vector<sessionID>* sids) {
 
 	HRESULT hr = S_OK; //HRESULT is success/failure code (0 = success) of type long
@@ -85,61 +81,11 @@ void AudioInterface::refreshSessions(std::vector<sessionID>* sids) {
 	safeReleaseAI(&sessionEnumerator);
 }
 
-//	Title: printSessions();
-//	Description: Prints the sessions in vector sessionsControl2 to std output
-//	Preconditions: Initialize sessionManager... should not print if sessionsControl2 not populated
-//	Postconditions: None
-void AudioInterface::printSessions() {
-	HRESULT hr = S_OK;
-	if (sessions.size() == 0) {
-		std::cout << "There are no active sessions" << std::endl;
-		return;
-	}
-	TCHAR processName[_MAX_FNAME];
-	DWORD processID;
-	int i = 0;
-	for (auto it = sessions.begin(); it != sessions.end(); ++it) {
-			processID = it->getProcessID();
-			wprintf_s(L"Process #%d Identifier: %d\n", i, processID);
-			std::string processName = it->getProcessName();
-			if (hr == S_OK && processName.size() < _MAX_FNAME) {
-				std::cout << "Process " << i << " Exe: " << processName << std::endl;
-			}
-			else {
-				printf_s("Process #%d Exe: no exe - likely system default\n", i);
-			}
-			i++;
-	}//for loop
-}
-
-void AudioInterface::printVolumes() {
-	float vol = 1.f;
-	BOOL mute = FALSE;
-	DWORD sessionIdentifier;
-	int i = 0;
-	for (auto it = this->sessions.begin(); it != this->sessions.end(); ++it){	
-		vol = it->getVolume();
-		mute = it->getMuted();
-		sessionIdentifier = it->getProcessID();
-		wprintf_s(L"Session #%d Identifier: %d\n", i, sessionIdentifier);
-		printf_s("Current session volume: %f. Muted: %d\n", vol, mute);
-		i++;
-	}//for loop
-}
-
 /* Removed until needed
 GUID AudioInterface::getGroupingGUID(GUID * groupingGUID, int i) {
 	hr = sessionsControl[i]->GetGroupingParam(groupingGUID);
 	return hr;
 } */
-
-void AudioInterface::changeVolume() {
-	if (sessions.size() == 0) {
-		printf_s("No sessions!");
-		return;
-	}
-//	sessions[sesh].setVolume(newVolume);
-}
 
 /* preserved for potential future use
 void AudioInterface::monitorMeter() {
