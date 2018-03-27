@@ -31,6 +31,11 @@
     <ClInclude Include="IAudioSessionEnumerator\ListenLoop.hpp" />
     <ClInclude Include="IAudioSessionEnumerator\Session.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="diagrams\classOverview.vsdx" />
+    <None Include="diagrams\InterfaceRelationships.vsdx" />
+    <None Include="README.md" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DE7DE489-A036-478C-810B-1002AB26D56D}</ProjectGuid>
     <RootNamespace>IAudioSessionEnumerator</RootNamespace>

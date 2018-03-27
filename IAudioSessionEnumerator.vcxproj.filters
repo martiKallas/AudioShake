@@ -45,4 +45,15 @@
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="diagrams\classOverview.vsdx">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="diagrams\InterfaceRelationships.vsdx">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
