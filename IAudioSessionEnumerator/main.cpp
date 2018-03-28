@@ -96,7 +96,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	//create tabs
 	//wxNotebook *notebook = new wxNotebook(this, wxID_ANY);
 
-	//create main tab
+	//create main page
 	page = new wxPanel(this);
 
 	//Create audio interface
@@ -111,7 +111,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	table = new wxFlexGridSizer(4, xPad, yPad);
 	mainSizer = new wxBoxSizer(wxVERTICAL);
 	
-	 //Create Add/Delete buttons -> now run/stop
+	 //Create run, stop and refresh buttons
 	wxStaticBoxSizer *buttons = new wxStaticBoxSizer(wxHORIZONTAL, page, wxT(""));
 	runB = new wxButton(page, ID_Run, wxT("Run"));
 	buttons->Add(runB);
@@ -145,13 +145,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	
 	OnRefresh(wxCommandEvent(wxEVT_COMMAND_BUTTON_CLICKED));
 
-	//	notebook->AddPage(page, wxT("Main"));
-	//	notebook->CalcSizeFromPage(table->CalcMin());
-
-
 	//create settings tab
-	//	page = new wxPanel(notebook);
-	//	notebook->AddPage(page, wxT("Settings"));
 }
 
 void MyFrame::OnExit(wxCommandEvent& event) {

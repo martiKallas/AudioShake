@@ -62,13 +62,10 @@ void Session::findProcessName() {
 
 		//GetProcessImageFileNameA(processHandle, fileName, _MAX_FNAME);
 	}
-	//fail
-	else { this->processName = "Name Failure"; return; }
+	//if no handle then it is the System process
+	else { this->processName = "System"; return; }
 
-	if (size == MAX_PATH) {
-		this->processName = "System";
-	}
-	else this->processName = std::string(fileName);
+	this->processName = std::string(fileName);
 
 }
 

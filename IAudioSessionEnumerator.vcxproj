@@ -24,12 +24,14 @@
     <ClCompile Include="IAudioSessionEnumerator\ListenLoop.cpp" />
     <ClCompile Include="IAudioSessionEnumerator\main.cpp" />
     <ClCompile Include="IAudioSessionEnumerator\Session.cpp" />
+    <ClCompile Include="IAudioSessionEnumerator\Settings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IAudioSessionEnumerator\AudioInterface.hpp" />
     <ClInclude Include="IAudioSessionEnumerator\GUISession.hpp" />
     <ClInclude Include="IAudioSessionEnumerator\ListenLoop.hpp" />
     <ClInclude Include="IAudioSessionEnumerator\Session.hpp" />
+    <ClInclude Include="IAudioSessionEnumerator\Settings.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="diagrams\classOverview.vsdx" />
@@ -90,6 +92,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -100,7 +105,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:\wxWidgets-3.0.3\lib\vc_lib;C:\boost_1_66_0\stage\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>wxmsw30ud_core.lib;wxbase30ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;winspool.lib;winmm.lib;shell32.lib;comctl32.lib;ole32.lib;oleaut32.lib;uuid.lib;rpcrt4.lib;advapi32.lib;wsock32.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw31ud_core.lib;wxbase31ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;winspool.lib;winmm.lib;shell32.lib;comctl32.lib;ole32.lib;oleaut32.lib;uuid.lib;rpcrt4.lib;advapi32.lib;wsock32.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -123,14 +128,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\boost_1_66_0;C:\wxWidgets-3.0.3\lib\vc_lib\mswud;C:\wxWidgets-3.0.3\include;C:\boost_1_66_0\boost;C:\wxWidgets-3.0.3\samples</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\boost_1_66_0;C:\wxWidgets-3.1.1\lib\vc_lib\mswud;C:\wxWidgets-3.1.1\include;C:\boost_1_66_0\boost;C:\wxWidgets-3.1.1\samples</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\wxWidgets-3.0.3\lib\vc_lib;C:\boost_1_66_0\stage\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>wxmsw30u_core.lib;wxbase30u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;winspool.lib;winmm.lib;shell32.lib;comctl32.lib;ole32.lib;oleaut32.lib;uuid.lib;rpcrt4.lib;advapi32.lib;wsock32.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\wxWidgets-3.1.1\lib\vc_lib;C:\boost_1_66_0\stage\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>wxmsw31u_core.lib;wxbase31u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;winspool.lib;winmm.lib;shell32.lib;comctl32.lib;ole32.lib;oleaut32.lib;uuid.lib;rpcrt4.lib;advapi32.lib;wsock32.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
