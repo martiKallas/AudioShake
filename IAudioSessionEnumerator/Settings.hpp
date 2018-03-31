@@ -42,7 +42,6 @@ public:
 	// TODO: figure out if this is how new files should be made/set
 	//		What is the process for loading/saving from one file to next?
 	int setSettingsFile(std::string file);
-
 };
 
 class NoMoveWindow : public wxWindow {
@@ -86,3 +85,9 @@ public:
 //Functions from wxWidgets keyboard sample:
 const char* GetVirtualKeyCodeName(int keycode);
 wxString GetKeyName(const wxKeyEvent &event);
+
+//Converts wxKeyCode to MSW virtual key number
+//	As far as I can tell, virtual keys with GetAsyncKey are the only reliable
+//	way to get key presses when the program is in the background while in listen
+//	loop. wxWidgets key controls don't seem to be made to work in the background.
+int WXtoVK(wxKeyCode i);

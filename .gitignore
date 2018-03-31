@@ -240,3 +240,5 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/temp/Settings3-31-18.cpp
+/temp/Settings3-31-18.hpp

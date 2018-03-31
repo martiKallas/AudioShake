@@ -300,12 +300,13 @@ wxString GetKeyName(const wxKeyEvent &event)
 {
 	int keycode = event.GetKeyCode();
 	const char* virt = GetVirtualKeyCodeName(keycode);
+	//TODO: remove %d
 	if (virt)
-		return virt;
+		return wxString::Format("%s + %d", virt, keycode);
 	if (keycode > 0 && keycode < 32)
-		return wxString::Format("Ctrl-%c", (unsigned char)('A' + keycode - 1));
+		return wxString::Format("Ctrl-%c + %d", (unsigned char)('A' + keycode - 1), keycode);
 	if (keycode >= 32 && keycode < 128)
-		return wxString::Format("'%c'", (unsigned char)keycode);
+		return wxString::Format("%c + %d", (unsigned char)keycode, keycode);
 
 #if wxUSE_UNICODE
 	int uc = event.GetUnicodeKey();
@@ -325,6 +326,7 @@ void SettingsPagePanel::OnNavKey(wxKeyEvent& event) {
 void SettingsPagePanel::OnKeyUp(wxKeyEvent& event) {
 	muteKeyEntry->SetLabel(GetKeyName(event));
 	muteKeyEntry->Show();
+	int vk = WXtoVK((wxKeyCode)event.GetKeyCode());
 	event.StopPropagation();
 }
 
@@ -335,6 +337,7 @@ void SettingsPagePanel::OnKeyDown(wxKeyEvent& event) {
 }
 
 SettingsPagePanel::SettingsPagePanel(wxWindow* parent) : wxPanel(parent) {
+		//TODO: prevent Enter from submitting changes
 		//this->settings = settings;
 		//Mute Key Input:
 		//TODO: possibly change NoMove class to wxWindow
@@ -356,4 +359,106 @@ SettingsPagePanel::SettingsPagePanel(wxWindow* parent) : wxPanel(parent) {
 NoMoveWindow::NoMoveWindow(wxWindow* parent, wxWindowID id) : wxWindow(parent, id){
 	this->SetExtraStyle(wxWS_EX_TRANSIENT);
 	this->SetExtraStyle(wxWS_EX_BLOCK_EVENTS);
+}
+
+int WXtoVK(wxKeyCode i) {
+	switch (i)
+	{
+#define WXK_(x) \
+        case WXK_##x: return VK_##x;
+		WXK_(BACK)
+			WXK_(TAB)
+			WXK_(RETURN)
+			WXK_(ESCAPE)
+			WXK_(SPACE)
+			WXK_(DELETE)
+			WXK_(LBUTTON)
+			WXK_(RBUTTON)
+			WXK_(CANCEL)
+			WXK_(MBUTTON)
+			WXK_(CLEAR)
+			WXK_(SHIFT)
+			WXK_(CONTROL)
+			WXK_(MENU)
+			WXK_(PAUSE)
+			WXK_(CAPITAL)
+			WXK_(END)
+			WXK_(HOME)
+			WXK_(LEFT)
+			WXK_(UP)
+			WXK_(RIGHT)
+			WXK_(DOWN)
+			WXK_(SELECT)
+			WXK_(PRINT)
+			WXK_(EXECUTE)
+			WXK_(SNAPSHOT)
+			WXK_(INSERT)
+			WXK_(HELP)
+			WXK_(NUMPAD0)
+			WXK_(NUMPAD1)
+			WXK_(NUMPAD2)
+			WXK_(NUMPAD3)
+			WXK_(NUMPAD4)
+			WXK_(NUMPAD5)
+			WXK_(NUMPAD6)
+			WXK_(NUMPAD7)
+			WXK_(NUMPAD8)
+			WXK_(NUMPAD9)
+			WXK_(MULTIPLY)
+			WXK_(ADD)
+			WXK_(SEPARATOR)
+			WXK_(SUBTRACT)
+			WXK_(DECIMAL)
+			WXK_(DIVIDE)
+			WXK_(F1)
+			WXK_(F2)
+			WXK_(F3)
+			WXK_(F4)
+			WXK_(F5)
+			WXK_(F6)
+			WXK_(F7)
+			WXK_(F8)
+			WXK_(F9)
+			WXK_(F10)
+			WXK_(F11)
+			WXK_(F12)
+			WXK_(F13)
+			WXK_(F14)
+			WXK_(F15)
+			WXK_(F16)
+			WXK_(F17)
+			WXK_(F18)
+			WXK_(F19)
+			WXK_(F20)
+			WXK_(F21)
+			WXK_(F22)
+			WXK_(F23)
+			WXK_(F24)
+			WXK_(NUMLOCK)
+			WXK_(SCROLL)
+#undef WXK_
+	}
+	switch (i) {
+		//WXK special keys to VK
+		case WXK_ALT: return VK_MENU;
+		case WXK_PAGEUP: return VK_PRIOR;
+		case WXK_PAGEDOWN: return VK_NEXT;
+		case WXK_NUMPAD_ENTER: return VK_RETURN;
+		case WXK_NUMPAD_MULTIPLY: return VK_MULTIPLY;
+		case WXK_NUMPAD_SEPARATOR: return VK_SEPARATOR;
+		case WXK_NUMPAD_SUBTRACT: return VK_SUBTRACT;
+		case WXK_NUMPAD_DECIMAL: return VK_DECIMAL;
+		case WXK_NUMPAD_DIVIDE: return VK_DIVIDE;
+		case WXK_WINDOWS_RIGHT: return VK_RWIN;
+		case WXK_WINDOWS_LEFT: return VK_LWIN;
+		case WXK_NUMPAD_ADD: return VK_ADD;
+	}
+	//Mouse buttons and cancel
+	if (i >= WXK_LBUTTON && i <= WXK_MBUTTON) return (i - (WXK_LBUTTON - VK_LBUTTON));
+	//ASCII keys
+	if (i >= '!' && i <= '}') return i;
+	//Note there are other keys that don't have clearly defined mappings - these
+	//	may be for other platforms but the above should cover the vast majority 
+	//	of needs. TODO: expand converter
+	return 0;
 }
