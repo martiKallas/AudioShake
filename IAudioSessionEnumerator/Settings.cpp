@@ -155,3 +155,205 @@ int Settings::setSettingsFile(std::string file) {
 	}
 	return -1;
 }
+
+//Function from wxWidgets keyboard Sample.
+const char* GetVirtualKeyCodeName(int keycode)
+{
+	switch (keycode)
+	{
+#define WXK_(x) \
+        case WXK_##x: return #x;
+
+		WXK_(BACK)
+			WXK_(TAB)
+			WXK_(RETURN)
+			WXK_(ESCAPE)
+			WXK_(SPACE)
+			WXK_(DELETE)
+			WXK_(START)
+			WXK_(LBUTTON)
+			WXK_(RBUTTON)
+			WXK_(CANCEL)
+			WXK_(MBUTTON)
+			WXK_(CLEAR)
+			WXK_(SHIFT)
+			WXK_(ALT)
+			WXK_(CONTROL)
+			WXK_(MENU)
+			WXK_(PAUSE)
+			WXK_(CAPITAL)
+			WXK_(END)
+			WXK_(HOME)
+			WXK_(LEFT)
+			WXK_(UP)
+			WXK_(RIGHT)
+			WXK_(DOWN)
+			WXK_(SELECT)
+			WXK_(PRINT)
+			WXK_(EXECUTE)
+			WXK_(SNAPSHOT)
+			WXK_(INSERT)
+			WXK_(HELP)
+			WXK_(NUMPAD0)
+			WXK_(NUMPAD1)
+			WXK_(NUMPAD2)
+			WXK_(NUMPAD3)
+			WXK_(NUMPAD4)
+			WXK_(NUMPAD5)
+			WXK_(NUMPAD6)
+			WXK_(NUMPAD7)
+			WXK_(NUMPAD8)
+			WXK_(NUMPAD9)
+			WXK_(MULTIPLY)
+			WXK_(ADD)
+			WXK_(SEPARATOR)
+			WXK_(SUBTRACT)
+			WXK_(DECIMAL)
+			WXK_(DIVIDE)
+			WXK_(F1)
+			WXK_(F2)
+			WXK_(F3)
+			WXK_(F4)
+			WXK_(F5)
+			WXK_(F6)
+			WXK_(F7)
+			WXK_(F8)
+			WXK_(F9)
+			WXK_(F10)
+			WXK_(F11)
+			WXK_(F12)
+			WXK_(F13)
+			WXK_(F14)
+			WXK_(F15)
+			WXK_(F16)
+			WXK_(F17)
+			WXK_(F18)
+			WXK_(F19)
+			WXK_(F20)
+			WXK_(F21)
+			WXK_(F22)
+			WXK_(F23)
+			WXK_(F24)
+			WXK_(NUMLOCK)
+			WXK_(SCROLL)
+			WXK_(PAGEUP)
+			WXK_(PAGEDOWN)
+			WXK_(NUMPAD_SPACE)
+			WXK_(NUMPAD_TAB)
+			WXK_(NUMPAD_ENTER)
+			WXK_(NUMPAD_F1)
+			WXK_(NUMPAD_F2)
+			WXK_(NUMPAD_F3)
+			WXK_(NUMPAD_F4)
+			WXK_(NUMPAD_HOME)
+			WXK_(NUMPAD_LEFT)
+			WXK_(NUMPAD_UP)
+			WXK_(NUMPAD_RIGHT)
+			WXK_(NUMPAD_DOWN)
+			WXK_(NUMPAD_PAGEUP)
+			WXK_(NUMPAD_PAGEDOWN)
+			WXK_(NUMPAD_END)
+			WXK_(NUMPAD_BEGIN)
+			WXK_(NUMPAD_INSERT)
+			WXK_(NUMPAD_DELETE)
+			WXK_(NUMPAD_EQUAL)
+			WXK_(NUMPAD_MULTIPLY)
+			WXK_(NUMPAD_ADD)
+			WXK_(NUMPAD_SEPARATOR)
+			WXK_(NUMPAD_SUBTRACT)
+			WXK_(NUMPAD_DECIMAL)
+			WXK_(NUMPAD_DIVIDE)
+
+			WXK_(WINDOWS_LEFT)
+			WXK_(WINDOWS_RIGHT)
+#ifdef __WXOSX__
+			WXK_(RAW_CONTROL)
+#endif
+			WXK_(BROWSER_BACK)
+			WXK_(BROWSER_FORWARD)
+			WXK_(BROWSER_REFRESH)
+			WXK_(BROWSER_STOP)
+			WXK_(BROWSER_SEARCH)
+			WXK_(BROWSER_FAVORITES)
+			WXK_(BROWSER_HOME)
+			WXK_(VOLUME_MUTE)
+			WXK_(VOLUME_DOWN)
+			WXK_(VOLUME_UP)
+			WXK_(MEDIA_NEXT_TRACK)
+			WXK_(MEDIA_PREV_TRACK)
+			WXK_(MEDIA_STOP)
+			WXK_(MEDIA_PLAY_PAUSE)
+			WXK_(LAUNCH_MAIL)
+			WXK_(LAUNCH_APP1)
+			WXK_(LAUNCH_APP2)
+#undef WXK_
+
+	default:
+		return NULL;
+	}
+}
+
+
+//function from wxWidgets keyboard sample
+//returns text description of key used in event
+wxString GetKeyName(const wxKeyEvent &event)
+{
+	int keycode = event.GetKeyCode();
+	const char* virt = GetVirtualKeyCodeName(keycode);
+	if (virt)
+		return virt;
+	if (keycode > 0 && keycode < 32)
+		return wxString::Format("Ctrl-%c", (unsigned char)('A' + keycode - 1));
+	if (keycode >= 32 && keycode < 128)
+		return wxString::Format("'%c'", (unsigned char)keycode);
+
+#if wxUSE_UNICODE
+	int uc = event.GetUnicodeKey();
+	if (uc != WXK_NONE)
+		return wxString::Format("'%c'", uc);
+#endif
+
+	return "unknown";
+}
+
+void SettingsPagePanel::OnNavKey(wxKeyEvent& event) {
+	//muteKeyEntry->SetLabel(GetKeyName(event));
+	//muteKeyEntry->Show();
+	event.StopPropagation();
+}
+
+void SettingsPagePanel::OnKeyUp(wxKeyEvent& event) {
+	muteKeyEntry->SetLabel(GetKeyName(event));
+	muteKeyEntry->Show();
+	event.StopPropagation();
+}
+
+void SettingsPagePanel::OnKeyDown(wxKeyEvent& event) {
+	//muteKeyEntry->SetLabel(GetKeyName(event));
+	//muteKeyEntry->Show();
+	event.StopPropagation();
+}
+
+SettingsPagePanel::SettingsPagePanel(wxWindow* parent) : wxPanel(parent) {
+		//this->settings = settings;
+		//Mute Key Input:
+		//TODO: possibly change NoMove class to wxWindow
+		muteKeyText = new wxStaticText(this, wxID_ANY, "Mute Key: ");
+		//TODO: indicate when this has focus -- maybe remove key
+		muteKeyEntry = new wxTextCtrl(this, wxID_ANY, "TODO:");
+		this->SetExtraStyle(wxWANTS_CHARS);
+		this->Bind(wxEVT_NAVIGATION_KEY, wxKeyEventHandler(SettingsPagePanel::OnNavKey), this);
+		muteKeyEntry->Bind(wxEVT_KEY_UP, wxKeyEventHandler(SettingsPagePanel::OnKeyUp), this);
+		muteKeyEntry->Bind(wxEVT_KEY_DOWN, wxKeyEventHandler(SettingsPagePanel::OnKeyDown), this);
+		muteEntry = new wxStaticBoxSizer(wxHORIZONTAL, this, wxT(""));
+		muteEntry->Add(muteKeyText, wxSizerFlags().Expand());
+		muteEntry->Add(muteKeyEntry, wxSizerFlags().Expand());
+		this->SetSizerAndFit(muteEntry);
+		Layout();
+		//TODO: insert buttons and bind events
+}
+
+NoMoveWindow::NoMoveWindow(wxWindow* parent, wxWindowID id) : wxWindow(parent, id){
+	this->SetExtraStyle(wxWS_EX_TRANSIENT);
+	this->SetExtraStyle(wxWS_EX_BLOCK_EVENTS);
+}

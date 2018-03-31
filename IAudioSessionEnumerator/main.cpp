@@ -1,15 +1,48 @@
+/*
+*  Sources:
+*		wxWidgets Samples
+*/
+
 #include <wx/wx.h>
 #include <wx/notebook.h>
 #include <wx/propgrid/propgrid.h>
+#include <wx/preferences.h>
 #include "AudioInterface.hpp"
 #include "ListenLoop.hpp"
 #include "GUISession.hpp"
+#include "Settings.hpp"
 
 // Should be defined in virtually every app
 class MyApp : public wxApp {
 public:
 	virtual bool OnInit();
+	void ShowSettings(wxWindow* parent);
+	Settings* getSettings() { return &settings; }
+private:
+	wxScopedPtr<wxPreferencesEditor> m_prefEditor;
+	Settings settings;
 };
+
+DECLARE_APP(MyApp)
+
+void MyApp::ShowSettings(wxWindow* parent) {
+	if (!m_prefEditor) {
+		m_prefEditor.reset(new wxPreferencesEditor);
+		m_prefEditor->AddPage(new SettingsPageGeneral);
+	}
+	m_prefEditor->Show(parent);
+	/*TODO: old code:
+	if (!settingsWindow) {
+		settingsWindow = new SettingsWindow(parent, wxID_ANY, "Settings", wxPoint(50, 50), wxSize(450, 340), &settings);
+		wxNotebook *notebook = new wxNotebook(settingsWindow, wxID_ANY);
+		SettingsPagePanel *settingsPage = new SettingsPagePanel(notebook, &settings);
+		notebook->AddPage(settingsPage, "General", false, NULL);
+	}
+	settingsWindow->Show(parent);
+	*/
+}
+
+
 
 //Create a main window below by deriving from wxFrame
 //	Any class that wants to respond to events (clicks...) must declare an event table
@@ -29,12 +62,14 @@ private:
 	void OnRefresh(wxCommandEvent& event);
 	void OnRun(wxCommandEvent& event);
 	void OnStop(wxCommandEvent& event);
+	void OnSettings(wxCommandEvent& event);
 	void ClearElements();
 	void RunDisable();
 	void StopEnable();
 	wxButton * runB;
 	wxButton * stopB;
 	wxButton * refreshB;
+	wxButton * setB;
 	wxFlexGridSizer *table;
 	wxSizer *mainSizer;
 	wxPanel *page;
@@ -46,7 +81,8 @@ private:
 enum {
 	ID_Run,
 	ID_Stop,
-	ID_Refresh
+	ID_Refresh,
+	ID_Settings
 };
 
 // The event table is created so that events are routed to the appropriate handlers.
@@ -55,6 +91,7 @@ EVT_MENU(wxID_EXIT, MyFrame::OnExit)
 EVT_BUTTON(ID_Refresh, MyFrame::OnRefresh)
 EVT_BUTTON(ID_Run, MyFrame::OnRun)
 EVT_BUTTON(ID_Stop, MyFrame::OnStop)
+EVT_BUTTON(ID_Settings, MyFrame::OnSettings)
 wxEND_EVENT_TABLE()
 
 //Creates and starts the main function
@@ -63,6 +100,8 @@ wxIMPLEMENT_APP(MyApp);
 //Define OnInit() to create windows or show a splash screen
 bool MyApp::OnInit() {
 	MyFrame *frame = new MyFrame("AudioShake v0.0.1", wxPoint(50, 50), wxSize(450, 340));
+	//Settings automatically load settings.json
+	settings = Settings();
 	frame->Show(true);
 	return true;
 }
@@ -119,6 +158,8 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	buttons->Add(stopB);
 	refreshB = new wxButton(page, ID_Refresh, wxT("Refresh"));
 	buttons->Add(refreshB);
+	setB = new wxButton(page, ID_Settings, wxT("Settings"));
+	buttons->Add(setB);
 	mainSizer->Add(buttons);
 
 	//Labels for aud
@@ -226,6 +267,10 @@ void MyFrame::OnRefresh(wxCommandEvent& event) {
 	page->SetSizerAndFit(mainSizer);
 }
 
+void MyFrame::OnSettings(wxCommandEvent& event) {
+	wxGetApp().ShowSettings(this);
+}
+
 void MyFrame::ClearElements() {
 	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it) {
 		delete *it;
@@ -236,6 +281,7 @@ void MyFrame::ClearElements() {
 void MyFrame::RunDisable() {
 	runB->Disable();
 	refreshB->Disable();
+	setB->Disable();
 	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it) {
 		(*it)->disableButtons();
 	}
@@ -244,6 +290,7 @@ void MyFrame::RunDisable() {
 void MyFrame::StopEnable() {
 	runB->Enable();
 	refreshB->Enable();
+	setB->Enable();
 	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it) {
 		(*it)->enableButtons();
 	}

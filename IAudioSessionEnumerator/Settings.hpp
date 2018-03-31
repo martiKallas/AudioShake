@@ -1,11 +1,15 @@
 /* Author: Marti Kallas
 *  Date: 3/28/2018
 *  Description: Module for saving, loading and manipulating settings.
+*  Sources:
+*		wxWidgets keyboard sample: https://github.com/wxWidgets/wxWidgets/blob/v3.0.2/samples/keyboard/keyboard.cpp#L346-L485
 */
 #pragma once
 
 //TODO: Remove dependency on AudioInterface.hpp - bring all settings here
 #include "AudioInterface.hpp"
+#include <wx/preferences.h>
+#include <wx/wx.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
@@ -38,4 +42,47 @@ public:
 	// TODO: figure out if this is how new files should be made/set
 	//		What is the process for loading/saving from one file to next?
 	int setSettingsFile(std::string file);
+
 };
+
+class NoMoveWindow : public wxWindow {
+public:
+	NoMoveWindow(wxWindow* parent, wxWindowID);
+	virtual void SetFocusFromKbd() {};
+};
+
+//TODO: consider moving this to the Settings module or another
+class SettingsPagePanel : public wxPanel {
+public:
+	SettingsPagePanel(wxWindow *parent);
+	virtual void SetFocusFromKbd() {}
+private:
+	Settings * settings;
+	wxTextCtrl* muteKeyEntry;
+	wxStaticText* muteKeyText;
+	wxStaticBoxSizer* muteEntry;
+	void OnKeyDown(wxKeyEvent& event);
+	void OnKeyUp(wxKeyEvent& event);
+	void OnNavKey(wxKeyEvent& event);
+	//TODO: add functions for value change, check value and apply
+	void loadSettingsToWindow() {
+		//TODO: all of this
+	}
+	void saveSettingsFromWindow() {
+		//TODO: all of this
+	}
+};
+
+//TODO: consider customizing this
+class SettingsPageGeneral : public wxStockPreferencesPage {
+public:
+	SettingsPageGeneral() : wxStockPreferencesPage(Kind_General) {}
+	virtual wxWindow* CreateWindow(wxWindow *parent) {
+		return new SettingsPagePanel(parent);
+	}
+	virtual void SetFocusFromkbd() {}
+};
+
+//Functions from wxWidgets keyboard sample:
+const char* GetVirtualKeyCodeName(int keycode);
+wxString GetKeyName(const wxKeyEvent &event);
