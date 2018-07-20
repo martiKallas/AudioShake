@@ -38,9 +38,9 @@ DECLARE_APP(MyApp)
 //Create a main window below by deriving from wxFrame
 //	Any class that wants to respond to events (clicks...) must declare an event table
 //	The OnHello, OnExit, ... are handlers for events
-class MyFrame : public wxFrame {
+class MainUI : public wxFrame {
 public:
-	MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
+	MainUI(const wxString& title, const wxPoint& pos, const wxSize& size);
 private:
 	std::vector<GUISession*> sessionElements;
 	std::vector<sessionID> sessionIDs;
@@ -75,16 +75,16 @@ enum {
 };
 
 // The event table is created so that events are routed to the appropriate handlers.
-wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
-EVT_MENU(wxID_EXIT, MyFrame::OnExit)
-EVT_BUTTON(ID_Refresh, MyFrame::OnRefresh)
-EVT_BUTTON(ID_Run, MyFrame::OnRun)
-EVT_BUTTON(ID_Stop, MyFrame::OnStop)
-EVT_BUTTON(ID_Settings, MyFrame::OnSettings)
+wxBEGIN_EVENT_TABLE(MainUI, wxFrame)
+EVT_MENU(wxID_EXIT, MainUI::OnExit)
+EVT_BUTTON(ID_Refresh, MainUI::OnRefresh)
+EVT_BUTTON(ID_Run, MainUI::OnRun)
+EVT_BUTTON(ID_Stop, MainUI::OnStop)
+EVT_BUTTON(ID_Settings, MainUI::OnSettings)
 wxEND_EVENT_TABLE()
 
 bool MyApp::OnInit() {
-	MyFrame *frame = new MyFrame("AudioShake v0.0.1", wxPoint(50, 50), wxSize(450, 340));
+	MainUI *frame = new MainUI("AudioShake v0.0.1", wxPoint(50, 50), wxSize(450, 340));
 	//Settings automatically load settings.json
 	settings = new Settings();
 	frame->Show(true);
@@ -98,7 +98,7 @@ wxIMPLEMENT_APP(MyApp);
 //Menu items and buttons can be made in the constructor of the main window
 //	or later on
 
-MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
+MainUI::MainUI(const wxString& title, const wxPoint& pos, const wxSize& size)
 	: wxFrame(NULL, wxID_ANY, title, pos, size) {
 
 	//create the menu
@@ -178,7 +178,7 @@ MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	//create settings tab
 }
 
-void MyFrame::OnExit(wxCommandEvent& event) {
+void MainUI::OnExit(wxCommandEvent& event) {
 	if (loopRunning) {
 		lThread->setLoopVar(0);
 	}
@@ -186,16 +186,17 @@ void MyFrame::OnExit(wxCommandEvent& event) {
 	loopRunning = false;
 }
 
-void MyFrame::OnRun(wxCommandEvent& event) {
+void MainUI::OnRun(wxCommandEvent& event) {
 	if (loopRunning) {
 		lThread->setLoopVar(0);
 		loopRunning = false;
 		StopEnable();
 	}
 	lThread = new ListenLoop(this, &audioI);
-	lThread->setMuteKey(audioI.getMuteKey());
-	lThread->setQuitKey(audioI.getQuitKey());
-	lThread->setRefreshTime(audioI.getRefreshTime());
+	Settings *settings = wxGetApp().getSettings();
+	lThread->setMuteKey(settings->getMuteKey());
+	lThread->setStopKey(settings->getStopKey());
+	lThread->setRefreshTime(settings->getRefreshTime());
 	audioI.clearLists();
 	//If the check boxes are checked, add the session to the appropriate list
 	int success = 0;
@@ -218,7 +219,7 @@ void MyFrame::OnRun(wxCommandEvent& event) {
 	}
 }
 
-void MyFrame::OnStop(wxCommandEvent& event) {
+void MainUI::OnStop(wxCommandEvent& event) {
 	//ListenLoop is a detached thread. Setting loopVar = 0 will terminate the thread
 	if (loopRunning) {
 		lThread->setLoopVar(0);
@@ -227,7 +228,7 @@ void MyFrame::OnStop(wxCommandEvent& event) {
 	loopRunning = false;
 }
 
-void MyFrame::OnRefresh(wxCommandEvent& event) {
+void MainUI::OnRefresh(wxCommandEvent& event) {
 	audioI.refreshSessions(&sessionIDs);
 	ClearElements();
 	int exists = 0;
@@ -256,19 +257,19 @@ void MyFrame::OnRefresh(wxCommandEvent& event) {
 	page->SetSizerAndFit(mainSizer);
 }
 
-void MyFrame::OnSettings(wxCommandEvent& event) {
+void MainUI::OnSettings(wxCommandEvent& event) {
 	//TODO: remove wxGetApp().ShowSettings(this);
 	wxGetApp().getSettings()->showSettings(this);
 }
 
-void MyFrame::ClearElements() {
+void MainUI::ClearElements() {
 	for (auto it = sessionElements.begin(); it != sessionElements.end(); ++it) {
 		delete *it;
 	}
 	sessionElements.clear();
 }
 
-void MyFrame::RunDisable() {
+void MainUI::RunDisable() {
 	runB->Disable();
 	refreshB->Disable();
 	setB->Disable();
@@ -277,7 +278,7 @@ void MyFrame::RunDisable() {
 	}
 }
 
-void MyFrame::StopEnable() {
+void MainUI::StopEnable() {
 	runB->Enable();
 	refreshB->Enable();
 	setB->Enable();

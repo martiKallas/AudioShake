@@ -19,7 +19,7 @@ private:
 	//loop variables to track
 	int loopOn;
 	int muteKey;
-	int quitKey;
+	int stopKey;
 	int waitTime;
 	int mutePress;
 	int keyUp;
@@ -43,7 +43,7 @@ public:
 	virtual wxThread::ExitCode EntryHoldKey();
 
 	void setMuteKey(int virutalKey);
-	void setQuitKey(int virtualKey);
+	void setStopKey(int virtualKey);
 	void setRefreshTime(int waitTime);
 	//TODO: consider revising functions after determine multi-loop operation
 	void setMutePress(int i);

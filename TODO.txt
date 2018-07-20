@@ -13,3 +13,10 @@ Create icons for program
 Display icons on program list
 
 Create settings page
+
+Move default settings definitions from AudioInterface.hpp to Settings.hpp
+
+Improve ways to get process names - can try multiple avenues and attempt to select best:
+	Get .exe name and strip .exe (current)
+	Get window name
+	Are there other options?

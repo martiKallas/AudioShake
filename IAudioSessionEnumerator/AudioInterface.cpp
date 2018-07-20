@@ -261,7 +261,7 @@ void AudioInterface::loadSettings() {
 		settings.put("DimMult", DIM_MULT_DEFAULT);
 		settings.put("RampTime", RAMP_TIME_DEFAULT);
 		settings.put("MuteKey", MUTE_KEY_DEFAULT);
-		settings.put("QuitKey", QUIT_KEY_DEFAULT);
+		settings.put("StopKey", STOP_KEY_DEFAULT);
 		boost::property_tree::write_json("settings.json", settings);
 		return;
 	}
@@ -293,9 +293,9 @@ void AudioInterface::loadSettings() {
 			settings.put("MuteKey", MUTE_KEY_DEFAULT);
 			changed = 1;
 		}
-		int quitKey = settings.get("QuitKey", QUIT_KEY_DEFAULT);
+		int quitKey = settings.get("StopKey", STOP_KEY_DEFAULT);
 		if (quitKey < KEY_MIN || quitKey > KEY_MAX) {
-			settings.put("QuitKey", QUIT_KEY_DEFAULT);
+			settings.put("StopKey", STOP_KEY_DEFAULT);
 			changed = 1;
 		}
 		if (changed) {
@@ -310,7 +310,7 @@ int AudioInterface::getMuteKey() {
 }
 
 int AudioInterface::getQuitKey() {
-	return settings.get("QuitKey", QUIT_KEY_DEFAULT);
+	return settings.get("StopKey", STOP_KEY_DEFAULT);
 }
 
 int AudioInterface::getRefreshTime() {

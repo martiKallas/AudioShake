@@ -17,7 +17,7 @@ ListenLoop::ListenLoop(wxFrame* parent, AudioInterface* auI) {
 	//Get from settings
 	waitTime = REFRESH_TIME_DEFAULT;
 	muteKey = MUTE_KEY_DEFAULT;
-	quitKey = QUIT_KEY_DEFAULT;
+	stopKey = STOP_KEY_DEFAULT;
 }
 
 wxThread::ExitCode ListenLoop::Entry() {
@@ -75,7 +75,7 @@ wxThread::ExitCode ListenLoop::Entry() {
 			}
 		}
 
-		if (GetAsyncKeyState(VK_F4)) this->setLoopVar(0);
+		if (GetAsyncKeyState(stopKey)) this->setLoopVar(0);
 		Sleep(waitTime);
 
 	}
@@ -99,7 +99,7 @@ wxThread::ExitCode ListenLoop::EntryHoldKey() {
 		if (pAudioI->dimMaxExceeded()) {
 			dimOn = 1;
 		}
-		if (GetAsyncKeyState(VK_DOWN)) {
+		if (GetAsyncKeyState(muteKey)) {
 			pParent->SetStatusText("Key Detected");
 			muteDown = 1;
 		}
@@ -129,7 +129,7 @@ wxThread::ExitCode ListenLoop::EntryHoldKey() {
 			}
 		}
 
-		if (GetAsyncKeyState(VK_F4)) this->setLoopVar(0);
+		if (GetAsyncKeyState(stopKey)) this->setLoopVar(0);
 		Sleep(waitTime);
 
 	}
@@ -144,10 +144,10 @@ void ListenLoop::setMuteKey(int key) {
 	if (muteKey < KEY_MIN || muteKey > KEY_MAX) muteKey = MUTE_KEY_DEFAULT;
 }
 
-void ListenLoop::setQuitKey(int key) {
-	quitKey = key;
+void ListenLoop::setStopKey(int key) {
+	stopKey = key;
 
-	if (quitKey < KEY_MIN || quitKey > KEY_MAX) quitKey = MUTE_KEY_DEFAULT;
+	if (stopKey < KEY_MIN || stopKey > KEY_MAX) stopKey = MUTE_KEY_DEFAULT;
 }
 
 void ListenLoop::setRefreshTime(int time) {

@@ -12,7 +12,7 @@ void Settings::loadSettings() {
 		settings.put("DimMult", DIM_MULT_DEFAULT);
 		settings.put("RampTime", RAMP_TIME_DEFAULT);
 		settings.put("MuteKey", MUTE_KEY_DEFAULT);
-		settings.put("QuitKey", QUIT_KEY_DEFAULT);
+		settings.put("StopKey", STOP_KEY_DEFAULT);
 		boost::property_tree::write_json("settings.json", settings);
 		return;
 	}
@@ -44,9 +44,9 @@ void Settings::loadSettings() {
 			settings.put("MuteKey", MUTE_KEY_DEFAULT);
 			changed = 1;
 		}
-		int quitKey = settings.get("QuitKey", QUIT_KEY_DEFAULT);
+		int quitKey = settings.get("StopKey", STOP_KEY_DEFAULT);
 		if (quitKey < KEY_MIN || quitKey > KEY_MAX) {
-			settings.put("QuitKey", QUIT_KEY_DEFAULT);
+			settings.put("StopKey", STOP_KEY_DEFAULT);
 			changed = 1;
 		}
 		if (changed) {
@@ -77,9 +77,9 @@ void Settings::saveSettings() {
 	if (muteKey < KEY_MIN || muteKey > KEY_MAX) {
 		settings.put("MuteKey", MUTE_KEY_DEFAULT);
 	}
-	int quitKey = settings.get("QuitKey", QUIT_KEY_DEFAULT);
+	int quitKey = settings.get("StopKey", STOP_KEY_DEFAULT);
 	if (quitKey < KEY_MIN || quitKey > KEY_MAX) {
-		settings.put("QuitKey", QUIT_KEY_DEFAULT);
+		settings.put("StopKey", STOP_KEY_DEFAULT);
 	}
 	boost::property_tree::write_json(settingsFile, settings);
 }
@@ -93,7 +93,18 @@ int Settings::setMuteKey(int key) {
 		settings.put("MuteKey", key);
 		return 0;
 	}
+}
 
+
+int Settings::getStopKey() {
+	return settings.get("StopKey", STOP_KEY_DEFAULT);
+}
+int Settings::setStopKey(int key) {
+	if (key < KEY_MIN || key > KEY_MAX) return -1;
+	else {
+		settings.put("StopKey", key);
+		return 0;
+	}
 }
 
 int Settings::getRefreshTime() {
@@ -327,6 +338,7 @@ void SettingsPagePanel::OnKeyUp(wxKeyEvent& event) {
 	muteKeyEntry->SetLabel(GetKeyName(event));
 	muteKeyEntry->Show();
 	int vk = WXtoVK((wxKeyCode)event.GetKeyCode());
+	settings->setMuteKey(vk);
 	event.StopPropagation();
 }
 
@@ -454,6 +466,8 @@ int WXtoVK(wxKeyCode i) {
 		case WXK_WINDOWS_RIGHT: return VK_RWIN;
 		case WXK_WINDOWS_LEFT: return VK_LWIN;
 		case WXK_NUMPAD_ADD: return VK_ADD;
+		case '.': return VK_OEM_PERIOD;
+
 	}
 	//Mouse buttons and cancel
 	if (i >= WXK_LBUTTON && i <= WXK_MBUTTON) return (i - (WXK_LBUTTON - VK_LBUTTON));

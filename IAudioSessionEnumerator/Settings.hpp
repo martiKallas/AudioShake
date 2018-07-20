@@ -33,6 +33,8 @@ public:
 	//#### Set Functions Return -1 if outside of pre-defined bounds ####//
 	int getMuteKey();
 	int setMuteKey(int key);
+	int getStopKey();
+	int setStopKey(int key);
 	int getRefreshTime();
 	int setRefreshTime(int ms);
 	int getRampTime();

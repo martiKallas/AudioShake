@@ -27,7 +27,7 @@
 #define DIM_MULT_DEFAULT 0.50
 #define RAMP_TIME_DEFAULT 1000
 #define MUTE_KEY_DEFAULT VK_OEM_PERIOD
-#define QUIT_KEY_DEFAULT VK_F4
+#define STOP_KEY_DEFAULT VK_F4
 
 //settings limits
 #define REFRESH_MIN 5

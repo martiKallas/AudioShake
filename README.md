@@ -10,3 +10,10 @@ The later versions of this program will attempt to monitor a user-indicated "Pri
 for audio output. When there is output from the Primary program, all other user-indicated audio 
 sources will be dimmed to allow the user to better hear the Primary program. The non-primary
 sources will be brought up to their previous levels as soon as the Primary program is silent.
+
+
+# Current Work:
+
+Create a settings page to allow users to change simple settings in the program.
+
+
