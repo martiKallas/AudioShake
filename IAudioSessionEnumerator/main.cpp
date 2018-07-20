@@ -12,37 +12,28 @@
 #include "GUISession.hpp"
 #include "Settings.hpp"
 
-// Should be defined in virtually every app
-class MyApp : public wxApp {
-public:
-	virtual bool OnInit();
-	void ShowSettings(wxWindow* parent);
-	Settings* getSettings() { return &settings; }
-private:
-	wxScopedPtr<wxPreferencesEditor> m_prefEditor;
-	Settings settings;
-};
-
-DECLARE_APP(MyApp)
-
+/*
 void MyApp::ShowSettings(wxWindow* parent) {
 	if (!m_prefEditor) {
 		m_prefEditor.reset(new wxPreferencesEditor);
 		m_prefEditor->AddPage(new SettingsPageGeneral);
 	}
 	m_prefEditor->Show(parent);
-	/*TODO: old code:
-	if (!settingsWindow) {
-		settingsWindow = new SettingsWindow(parent, wxID_ANY, "Settings", wxPoint(50, 50), wxSize(450, 340), &settings);
-		wxNotebook *notebook = new wxNotebook(settingsWindow, wxID_ANY);
-		SettingsPagePanel *settingsPage = new SettingsPagePanel(notebook, &settings);
-		notebook->AddPage(settingsPage, "General", false, NULL);
-	}
-	settingsWindow->Show(parent);
-	*/
 }
+*/
 
+// Should be defined in virtually every app
+class MyApp : public wxApp {
+public:
+	virtual bool OnInit();
+	//TODO: remove: void ShowSettings(wxWindow* parent);
+	Settings* getSettings() { return settings; }
+private:
+	//TODO: remove: wxScopedPtr<wxPreferencesEditor> m_prefEditor;
+	Settings* settings;
+};
 
+DECLARE_APP(MyApp)
 
 //Create a main window below by deriving from wxFrame
 //	Any class that wants to respond to events (clicks...) must declare an event table
@@ -56,9 +47,7 @@ private:
 	AudioInterface audioI;
 	ListenLoop *lThread;
 	bool loopRunning = false;
-	void OnHello(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
-	void OnAbout(wxCommandEvent& event);
 	void OnRefresh(wxCommandEvent& event);
 	void OnRun(wxCommandEvent& event);
 	void OnStop(wxCommandEvent& event);
@@ -94,17 +83,17 @@ EVT_BUTTON(ID_Stop, MyFrame::OnStop)
 EVT_BUTTON(ID_Settings, MyFrame::OnSettings)
 wxEND_EVENT_TABLE()
 
-//Creates and starts the main function
-wxIMPLEMENT_APP(MyApp);
-
-//Define OnInit() to create windows or show a splash screen
 bool MyApp::OnInit() {
 	MyFrame *frame = new MyFrame("AudioShake v0.0.1", wxPoint(50, 50), wxSize(450, 340));
 	//Settings automatically load settings.json
-	settings = Settings();
+	settings = new Settings();
 	frame->Show(true);
 	return true;
 }
+
+
+//Creates and starts the main function
+wxIMPLEMENT_APP(MyApp);
 
 //Menu items and buttons can be made in the constructor of the main window
 //	or later on
@@ -268,7 +257,8 @@ void MyFrame::OnRefresh(wxCommandEvent& event) {
 }
 
 void MyFrame::OnSettings(wxCommandEvent& event) {
-	wxGetApp().ShowSettings(this);
+	//TODO: remove wxGetApp().ShowSettings(this);
+	wxGetApp().getSettings()->showSettings(this);
 }
 
 void MyFrame::ClearElements() {

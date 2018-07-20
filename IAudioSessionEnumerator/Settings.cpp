@@ -336,14 +336,16 @@ void SettingsPagePanel::OnKeyDown(wxKeyEvent& event) {
 	event.StopPropagation();
 }
 
-SettingsPagePanel::SettingsPagePanel(wxWindow* parent) : wxPanel(parent) {
+SettingsPagePanel::SettingsPagePanel(wxWindow* parent, Settings* settings) : wxPanel(parent) {
 		//TODO: prevent Enter from submitting changes
-		//this->settings = settings;
+		this->settings = settings;
 		//Mute Key Input:
 		//TODO: possibly change NoMove class to wxWindow
 		muteKeyText = new wxStaticText(this, wxID_ANY, "Mute Key: ");
-		//TODO: indicate when this has focus -- maybe remove key
-		muteKeyEntry = new wxTextCtrl(this, wxID_ANY, "TODO:");
+		//TODO: expand this entry box
+		char currentKey[MAX_KEY_NAME];
+		vkToText(settings->getMuteKey(), currentKey);
+		muteKeyEntry = new wxTextCtrl(this, wxID_ANY, currentKey);
 		this->SetExtraStyle(wxWANTS_CHARS);
 		this->Bind(wxEVT_NAVIGATION_KEY, wxKeyEventHandler(SettingsPagePanel::OnNavKey), this);
 		muteKeyEntry->Bind(wxEVT_KEY_UP, wxKeyEventHandler(SettingsPagePanel::OnKeyUp), this);
@@ -456,9 +458,40 @@ int WXtoVK(wxKeyCode i) {
 	//Mouse buttons and cancel
 	if (i >= WXK_LBUTTON && i <= WXK_MBUTTON) return (i - (WXK_LBUTTON - VK_LBUTTON));
 	//ASCII keys
-	if (i >= '!' && i <= '}') return i;
+	if (i >= '!' && i <= '~') return i;
 	//Note there are other keys that don't have clearly defined mappings - these
-	//	may be for other platforms but the above should cover the vast majority 
+	//	may be for other platforms or OEM keys but the above should cover the vast majority 
 	//	of needs. TODO: expand converter
 	return 0;
 }
+
+void Settings::showSettings(wxWindow* parent) {
+	if (!settingsEditor) {
+		settingsEditor.reset(new wxPreferencesEditor);
+		SettingsPageGeneral* settingsPage = new SettingsPageGeneral(this);
+		settingsEditor->AddPage(settingsPage);
+	}
+	settingsEditor->Show(parent);
+}
+
+void SettingsPageGeneral::setSettings(Settings* settings) {
+	this->settings = settings;
+}
+
+void vkToText(int vk, char name[MAX_KEY_NAME]) {
+	memset(name, '\0', sizeof name);
+	UINT scanCode = MapVirtualKeyW(vk, MAPVK_VK_TO_VSC);
+	LONG lParamValue = (scanCode << 16);
+	GetKeyNameTextW(lParamValue, (LPWSTR)name, MAX_KEY_NAME);
+	name[MAX_KEY_NAME - 1] = '\0';
+}
+
+/*
+void MyApp::ShowSettings(wxWindow* parent) {
+if (!m_prefEditor) {
+m_prefEditor.reset(new wxPreferencesEditor);
+m_prefEditor->AddPage(new SettingsPageGeneral);
+}
+m_prefEditor->Show(parent);
+}
+*/

@@ -15,10 +15,13 @@
 #include <boost/filesystem.hpp>
 #include <string>
 
+#define MAX_KEY_NAME 32
+
 class Settings {
 private:
 	boost::property_tree::ptree settings;
 	std::string settingsFile;
+	wxScopedPtr<wxPreferencesEditor> settingsEditor;
 public:
 	Settings();
 	/* Description: Loads settings from settingsFile (settingsFile defaults to "settings.json")
@@ -42,6 +45,7 @@ public:
 	// TODO: figure out if this is how new files should be made/set
 	//		What is the process for loading/saving from one file to next?
 	int setSettingsFile(std::string file);
+	void showSettings(wxWindow* parent);
 };
 
 class NoMoveWindow : public wxWindow {
@@ -53,7 +57,7 @@ public:
 //TODO: consider moving this to the Settings module or another
 class SettingsPagePanel : public wxPanel {
 public:
-	SettingsPagePanel(wxWindow *parent);
+	SettingsPagePanel(wxWindow *parent, Settings *settings);
 	virtual void SetFocusFromKbd() {}
 private:
 	Settings * settings;
@@ -75,11 +79,18 @@ private:
 //TODO: consider customizing this
 class SettingsPageGeneral : public wxStockPreferencesPage {
 public:
-	SettingsPageGeneral() : wxStockPreferencesPage(Kind_General) {}
+	SettingsPageGeneral(Settings* settings) : wxStockPreferencesPage(Kind_General) {
+		this->settings = settings;
+	}
+
+	//only let this be called after this->settings has been activated
 	virtual wxWindow* CreateWindow(wxWindow *parent) {
-		return new SettingsPagePanel(parent);
+		return new SettingsPagePanel(parent, this->settings);
 	}
 	virtual void SetFocusFromkbd() {}
+	void setSettings(Settings* settings);
+private:
+	Settings * settings;
 };
 
 //Functions from wxWidgets keyboard sample:
@@ -91,3 +102,8 @@ wxString GetKeyName(const wxKeyEvent &event);
 //	way to get key presses when the program is in the background while in listen
 //	loop. wxWidgets key controls don't seem to be made to work in the background.
 int WXtoVK(wxKeyCode i);
+
+/* Description: Converts a virtual key code into a text string
+*  Sources: https://stackoverflow.com/questions/38100667/windows-virtual-key-codes
+*/
+void vkToText(int vk, char name[MAX_KEY_NAME]);
