@@ -87,7 +87,7 @@ void Settings::saveSettings() {
 int Settings::getMuteKey() {
 	return settings.get("MuteKey", MUTE_KEY_DEFAULT);
 }
-int Settings::setMuteKey(int key) {
+int Settings::setMuteKey(SHORT key) {
 	if (key < KEY_MIN || key > KEY_MAX) return -1;
 	else {
 		settings.put("MuteKey", key);
@@ -99,7 +99,7 @@ int Settings::setMuteKey(int key) {
 int Settings::getStopKey() {
 	return settings.get("StopKey", STOP_KEY_DEFAULT);
 }
-int Settings::setStopKey(int key) {
+int Settings::setStopKey(SHORT key) {
 	if (key < KEY_MIN || key > KEY_MAX) return -1;
 	else {
 		settings.put("StopKey", key);
@@ -337,7 +337,7 @@ void SettingsPagePanel::OnNavKey(wxKeyEvent& event) {
 void SettingsPagePanel::OnKeyUp(wxKeyEvent& event) {
 	muteKeyEntry->SetLabel(GetKeyName(event));
 	muteKeyEntry->Show();
-	int vk = WXtoVK((wxKeyCode)event.GetKeyCode());
+	SHORT vk = WXtoVK((wxKeyCode)event.GetKeyCode());
 	settings->setMuteKey(vk);
 	event.StopPropagation();
 }
@@ -375,7 +375,7 @@ NoMoveWindow::NoMoveWindow(wxWindow* parent, wxWindowID id) : wxWindow(parent, i
 	this->SetExtraStyle(wxWS_EX_BLOCK_EVENTS);
 }
 
-int WXtoVK(wxKeyCode i) {
+SHORT WXtoVK(wxKeyCode i) {
 	switch (i)
 	{
 #define WXK_(x) \
@@ -466,13 +466,33 @@ int WXtoVK(wxKeyCode i) {
 		case WXK_WINDOWS_RIGHT: return VK_RWIN;
 		case WXK_WINDOWS_LEFT: return VK_LWIN;
 		case WXK_NUMPAD_ADD: return VK_ADD;
-		case '.': return VK_OEM_PERIOD;
 
 	}
 	//Mouse buttons and cancel
 	if (i >= WXK_LBUTTON && i <= WXK_MBUTTON) return (i - (WXK_LBUTTON - VK_LBUTTON));
 	//ASCII keys
-	if (i >= '!' && i <= '~') return i;
+	//These keys don't seem to match between wxWidgets and Microsoft's virtual keys.
+	//	Use VkKeyScanEx to translate char i to a virtual key code.
+	if (i >= '!' && i <= '/') {
+		SHORT code = VkKeyScanEx(i, GetKeyboardLayout(0));
+		//set high order bit to 0 to ignore shift
+		code = code & 0xCF;
+		return VkKeyScanEx(i, GetKeyboardLayout(0));
+	}
+	else if (i >= ':' && i <= '@') {
+		SHORT code = VkKeyScanEx(i, GetKeyboardLayout(0));
+		//set high order bit to 0 to ignore shift
+		code = code & 0xCF;
+		return VkKeyScanEx(i, GetKeyboardLayout(0));
+	}
+	else if (i >= '[' && i <= '~') {
+		SHORT code = VkKeyScanEx(i, GetKeyboardLayout(0));
+		//set high order bit to 0 to ignore shift
+		code = code & 0xCF;
+		return VkKeyScanEx(i, GetKeyboardLayout(0));
+	}
+	else return i;
+
 	//Note there are other keys that don't have clearly defined mappings - these
 	//	may be for other platforms or OEM keys but the above should cover the vast majority 
 	//	of needs. TODO: expand converter

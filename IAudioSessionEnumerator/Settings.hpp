@@ -32,9 +32,9 @@ public:
 	void saveSettings();
 	//#### Set Functions Return -1 if outside of pre-defined bounds ####//
 	int getMuteKey();
-	int setMuteKey(int key);
+	int setMuteKey(SHORT key);
 	int getStopKey();
-	int setStopKey(int key);
+	int setStopKey(SHORT key);
 	int getRefreshTime();
 	int setRefreshTime(int ms);
 	int getRampTime();
@@ -103,7 +103,7 @@ wxString GetKeyName(const wxKeyEvent &event);
 //	As far as I can tell, virtual keys with GetAsyncKey are the only reliable
 //	way to get key presses when the program is in the background while in listen
 //	loop. wxWidgets key controls don't seem to be made to work in the background.
-int WXtoVK(wxKeyCode i);
+SHORT WXtoVK(wxKeyCode i);
 
 /* Description: Converts a virtual key code into a text string
 *  Sources: https://stackoverflow.com/questions/38100667/windows-virtual-key-codes
