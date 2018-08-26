@@ -5,11 +5,18 @@
 
 
 //	Title: AudioInterface
-//	Description: Default constructor. Sets pointer variables = nullptr.
+//	Description: Constructor with settings input. Sets pointer variables = nullptr.
+AudioInterface::AudioInterface(Settings * settings) {
+	this->sessionManager = nullptr;
+	this->numSessions = 0;
+	this->settings = settings;
+}
+
+// Description: Default constructor. Settings pointer set to nullptr
 AudioInterface::AudioInterface() {
 	this->sessionManager = nullptr;
 	this->numSessions = 0;
-	loadSettings();
+	this->settings = nullptr;
 }
 
 //	Title: AudioInterface ~destructor
@@ -23,6 +30,7 @@ AudioInterface::~AudioInterface() {
 //	TODO: update appropriate variables to class specific variables: candidates device, deviceEnumerator
 HRESULT AudioInterface::initializeManager() {
 	HRESULT hr = S_OK;
+	if (settings == nullptr) return S_FALSE;
 
 	//IMMDevice interface encapsulates generic featrues of a multimedia device resource. Represents an audio endpoint device.
 	IMMDevice* device = nullptr;
@@ -71,9 +79,9 @@ void AudioInterface::refreshSessions(std::vector<sessionID>* sids) {
 		sessionID  newSID;
 		newSID.procID = sessions[i].getProcessID();
 		newSID.procName = sessions[i].getProcessName();
-		sessions[i].setDim(settings.get("DimMult", DIM_MULT_DEFAULT));
-		sessions[i].setRampTime(settings.get("RampTime", RAMP_TIME_DEFAULT), 
-			settings.get("RefreshTime", REFRESH_TIME_DEFAULT));
+		sessions[i].setDim(settings->getDimMult());
+		sessions[i].setRampTime(settings->getRampTime(), 
+			settings->getRefreshTime());
 		sids->push_back(newSID);
 
 	}
@@ -223,7 +231,7 @@ void AudioInterface::restoreVolumes() {
 
 int AudioInterface::dimMaxExceeded() {
 	for (auto it = muteMasters.begin(); it != muteMasters.end(); ++it) {
-		if ((*it)->getPeak() > settings.get("DimThreshold", DIM_THRESHOLD_DEFAULT)) {
+		if ((*it)->getPeak() > settings->getDimThreshold()) {
 			return 1;
 		}
 	}
@@ -253,66 +261,18 @@ void AudioInterface::clearLists() {
 	muteKeyList.clear();
 }
 
-
-void AudioInterface::loadSettings() {
-	if (!boost::filesystem::exists("settings.json")) {
-		settings.put("RefreshTime", REFRESH_TIME_DEFAULT);
-		settings.put("DimThreshold", DIM_THRESHOLD_DEFAULT);
-		settings.put("DimMult", DIM_MULT_DEFAULT);
-		settings.put("RampTime", RAMP_TIME_DEFAULT);
-		settings.put("MuteKey", MUTE_KEY_DEFAULT);
-		settings.put("StopKey", STOP_KEY_DEFAULT);
-		boost::property_tree::write_json("settings.json", settings);
-		return;
-	}
-	else {
-		int changed = 0;
-		boost::property_tree::read_json("settings.json", settings);
-		int refreshTime = settings.get("RefreshTime", REFRESH_TIME_DEFAULT);
-		if (refreshTime < REFRESH_MIN || refreshTime > REFRESH_MAX) {
-			settings.put("RefreshTime", REFRESH_TIME_DEFAULT);
-			changed = 1;
-		}
-		float dimThreshold = settings.get("DimThreshold", DIM_THRESHOLD_DEFAULT);
-		if (dimThreshold < THRESHOLD_MIN || dimThreshold > THRESHOLD_MAX) {
-			settings.put("DimThreshold", DIM_THRESHOLD_DEFAULT);
-			changed = 1;
-		}
-		float dimMult = settings.get("DimMult", DIM_MULT_DEFAULT);
-		if (dimMult < MULT_MIN || dimMult > MULT_MAX) {
-			settings.put("DimMult", DIM_MULT_DEFAULT);
-			changed = 1;
-		}
-		int ramp = settings.get("RampTime", RAMP_TIME_DEFAULT);
-		if (ramp < RAMP_MIN || ramp > RAMP_MAX) {
-			settings.put("RampTime", RAMP_TIME_DEFAULT);
-			changed = 1;
-		}
-		int muteKey = settings.get("MuteKey", MUTE_KEY_DEFAULT);
-		if (muteKey < KEY_MIN || muteKey > KEY_MAX) {
-			settings.put("MuteKey", MUTE_KEY_DEFAULT);
-			changed = 1;
-		}
-		int quitKey = settings.get("StopKey", STOP_KEY_DEFAULT);
-		if (quitKey < KEY_MIN || quitKey > KEY_MAX) {
-			settings.put("StopKey", STOP_KEY_DEFAULT);
-			changed = 1;
-		}
-		if (changed) {
-			boost::property_tree::write_json("settings.json", settings);
-		}
-	}
-
-}
-
-int AudioInterface::getMuteKey() {
-	return settings.get("MuteKey", MUTE_KEY_DEFAULT);
+ int AudioInterface::getMuteKey() {
+	return settings->getMuteKey();
 }
 
 int AudioInterface::getQuitKey() {
-	return settings.get("StopKey", STOP_KEY_DEFAULT);
+	return settings->getStopKey();
 }
 
 int AudioInterface::getRefreshTime() {
-	return settings.get("RefreshTime", REFRESH_TIME_DEFAULT);
+	return settings->getRefreshTime();
+}
+
+void AudioInterface::setSettings(Settings * set) {
+	settings = set;
 }

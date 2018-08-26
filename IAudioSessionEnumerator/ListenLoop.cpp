@@ -14,7 +14,6 @@ int ListenLoop::getLoopVar() {
 ListenLoop::ListenLoop(wxFrame* parent, AudioInterface* auI) {
 	this->pParent = parent;
 	this->pAudioI = auI;
-	//Get from settings
 	waitTime = REFRESH_TIME_DEFAULT;
 	muteKey = MUTE_KEY_DEFAULT;
 	stopKey = STOP_KEY_DEFAULT;

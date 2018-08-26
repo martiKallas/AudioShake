@@ -1,5 +1,11 @@
 Adjust volume default and dim when user changes volume manually
 
+Will need to make settings thread safe for multiple listen loops
+
+Settings page won't allow user to select TAB for any key except for Mute Key (may need to override tab events)
+
+Settings page: pressing enter while trying to assign a key selects OK for the whole page. This should not happen.
+
 Check that settings names exist
 
 Dynamically update program list without refreshing

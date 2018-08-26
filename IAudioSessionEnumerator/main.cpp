@@ -28,9 +28,12 @@ public:
 	virtual bool OnInit();
 	//TODO: remove: void ShowSettings(wxWindow* parent);
 	Settings* getSettings() { return settings; }
+	void initSettings() {
+		if (settings == nullptr) settings = new Settings();
+	}
 private:
 	//TODO: remove: wxScopedPtr<wxPreferencesEditor> m_prefEditor;
-	Settings* settings;
+	Settings* settings = nullptr;
 };
 
 DECLARE_APP(MyApp)
@@ -121,15 +124,13 @@ MainUI::MainUI(const wxString& title, const wxPoint& pos, const wxSize& size)
 	CreateStatusBar();
 	SetStatusText("Welcome to AudioShake!");
 
-	//create tabs
-	//wxNotebook *notebook = new wxNotebook(this, wxID_ANY);
-
 	//create main page
 	page = new wxPanel(this);
 
 	//Create audio interface
-	audioI = AudioInterface();
-	audioI.initializeManager();
+	wxGetApp().initSettings();
+	audioI = AudioInterface(wxGetApp().getSettings());
+	if (audioI.initializeManager() != S_OK) wxGetApp().ExitMainLoop();
 	loopRunning = false;
 
 	//Generic Placeholder Items

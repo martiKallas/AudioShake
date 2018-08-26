@@ -8,6 +8,7 @@
 
 #pragma once
 #include "Session.hpp"
+#include "Settings.hpp"
 #include <AudioPolicy.h>
 #include <Windows.h>
 #include <mmdeviceapi.h>
@@ -18,28 +19,6 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
-
-
-
-//settings defaults
-#define REFRESH_TIME_DEFAULT 50
-#define DIM_THRESHOLD_DEFAULT 0.02
-#define DIM_MULT_DEFAULT 0.50
-#define RAMP_TIME_DEFAULT 1000
-#define MUTE_KEY_DEFAULT VK_OEM_PERIOD
-#define STOP_KEY_DEFAULT VK_F4
-
-//settings limits
-#define REFRESH_MIN 5
-#define REFRESH_MAX 500
-#define THRESHOLD_MIN 0.001
-#define THRESHOLD_MAX 0.99
-#define MULT_MIN 0.0
-#define MULT_MAX 0.99
-#define RAMP_MIN 1
-#define RAMP_MAX 5000
-#define KEY_MIN 0x01
-#define KEY_MAX 0xFE
 
 //other
 #define NO_CHANGE -1
@@ -73,7 +52,7 @@ private:
 	IAudioSessionManager2 * sessionManager;
 	int numSessions;
 	std::vector<Session>  sessions;
-	boost::property_tree::ptree settings;
+	Settings * settings;
 
 	std::vector<Session *> muteKeyList;
 	std::vector<Session *> muteDependents;
@@ -82,9 +61,12 @@ private:
 	void loadSettings();
 
 public:
+	AudioInterface(Settings * settings);
 	AudioInterface();
 	~AudioInterface();
+	//must have settings set before using this function
 	HRESULT initializeManager();
+	void setSettings(Settings * settings);
 
 	/* Description: Releases all current COM pointers to session interfaces and re-establishes current list
 		of audio sessions with the appropriate pointers in sessionsControl and sessionsControl2

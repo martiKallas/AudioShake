@@ -84,7 +84,7 @@ void Settings::saveSettings() {
 	boost::property_tree::write_json(settingsFile, settings);
 }
 
-int Settings::getMuteKey() {
+SHORT Settings::getMuteKey() {
 	return settings.get("MuteKey", MUTE_KEY_DEFAULT);
 }
 int Settings::setMuteKey(SHORT key) {
@@ -96,7 +96,7 @@ int Settings::setMuteKey(SHORT key) {
 }
 
 
-int Settings::getStopKey() {
+SHORT Settings::getStopKey() {
 	return settings.get("StopKey", STOP_KEY_DEFAULT);
 }
 int Settings::setStopKey(SHORT key) {
@@ -311,13 +311,21 @@ wxString GetKeyName(const wxKeyEvent &event)
 {
 	int keycode = event.GetKeyCode();
 	const char* virt = GetVirtualKeyCodeName(keycode);
-	//TODO: remove %d
+	if (virt)
+		return wxString::Format("%s", virt);
+	//TODO: do these keys translate correctly to VK?
+	if (keycode > 0 && keycode < 32)
+		return wxString::Format("Ctrl-%c", (unsigned char)('A' + keycode - 1));
+	if (keycode >= 32 && keycode < 128)
+		return wxString::Format("%c", (unsigned char)keycode);
+	/* The below is used to display the numeric keycode for debugging
 	if (virt)
 		return wxString::Format("%s + %d", virt, keycode);
 	if (keycode > 0 && keycode < 32)
 		return wxString::Format("Ctrl-%c + %d", (unsigned char)('A' + keycode - 1), keycode);
 	if (keycode >= 32 && keycode < 128)
 		return wxString::Format("%c + %d", (unsigned char)keycode, keycode);
+	*/
 
 #if wxUSE_UNICODE
 	int uc = event.GetUnicodeKey();
@@ -335,10 +343,23 @@ void SettingsPagePanel::OnNavKey(wxKeyEvent& event) {
 }
 
 void SettingsPagePanel::OnKeyUp(wxKeyEvent& event) {
-	muteKeyEntry->SetLabel(GetKeyName(event));
-	muteKeyEntry->Show();
+	wxTextCtrl* eventObj = (wxTextCtrl*)event.GetEventObject();
 	SHORT vk = WXtoVK((wxKeyCode)event.GetKeyCode());
-	settings->setMuteKey(vk);
+
+	//TODO: handle this more elegantly (pop-up or other)
+	//Checks to see if key is already in use
+	//	Values in muteKeyValue && stopKeyValue may be different from settings if the settings
+	//	have not been saved yet.
+	if (vk == muteKeyValue || vk == stopKeyValue) {
+		event.StopPropagation();
+		return;
+	}
+
+	if (eventObj == muteKeyEntry) muteKeyValue = vk;
+	else stopKeyValue = vk;
+	eventObj->SetLabel(GetKeyName(event));
+	eventObj->Show();
+	//TODO: move this to saveSettingsFromWindow function to allow save/cancel buttons
 	event.StopPropagation();
 }
 
@@ -349,30 +370,77 @@ void SettingsPagePanel::OnKeyDown(wxKeyEvent& event) {
 }
 
 SettingsPagePanel::SettingsPagePanel(wxWindow* parent, Settings* settings) : wxPanel(parent) {
-		//TODO: prevent Enter from submitting changes
 		this->settings = settings;
+		int xPad = 20;
+		int yPad = 10;
+		wxFlexGridSizer *table = new wxFlexGridSizer(2, xPad, yPad);
+
 		//Mute Key Input:
 		//TODO: possibly change NoMove class to wxWindow
+		char muteKeyName[MAX_KEY_NAME];
 		muteKeyText = new wxStaticText(this, wxID_ANY, "Mute Key: ");
 		//TODO: expand this entry box
-		char currentKey[MAX_KEY_NAME];
-		vkToText(settings->getMuteKey(), currentKey);
-		muteKeyEntry = new wxTextCtrl(this, wxID_ANY, currentKey);
+		vkToText(settings->getMuteKey(), muteKeyName);
+		muteKeyEntry = new wxTextCtrl(this, wxID_ANY, muteKeyName);
 		this->SetExtraStyle(wxWANTS_CHARS);
-		this->Bind(wxEVT_NAVIGATION_KEY, wxKeyEventHandler(SettingsPagePanel::OnNavKey), this);
+		//Comment below is for entire window, although it seems to perform the same either way
+		//this->Bind(wxEVT_NAVIGATION_KEY, wxKeyEventHandler(SettingsPagePanel::OnNavKey), this);
+		muteKeyEntry->Bind(wxEVT_NAVIGATION_KEY, wxKeyEventHandler(SettingsPagePanel::OnNavKey), this);
 		muteKeyEntry->Bind(wxEVT_KEY_UP, wxKeyEventHandler(SettingsPagePanel::OnKeyUp), this);
 		muteKeyEntry->Bind(wxEVT_KEY_DOWN, wxKeyEventHandler(SettingsPagePanel::OnKeyDown), this);
-		muteEntry = new wxStaticBoxSizer(wxHORIZONTAL, this, wxT(""));
-		muteEntry->Add(muteKeyText, wxSizerFlags().Expand());
-		muteEntry->Add(muteKeyEntry, wxSizerFlags().Expand());
-		this->SetSizerAndFit(muteEntry);
+		//muteEntry = new wxStaticBoxSizer(wxHORIZONTAL, this, wxT(""));
+		table->Add(muteKeyText, wxSizerFlags().Expand());
+		table->Add(muteKeyEntry, wxSizerFlags().Expand());
+
+		//Stop Key Input:
+		wxStaticText *stopKeyText = new wxStaticText(this, wxID_ANY, "Stop Key: ");
+		char stopKeyName[MAX_KEY_NAME];
+		//TODO: expand this entry box
+		vkToText(settings->getStopKey(), stopKeyName);
+		stopKeyEntry = new wxTextCtrl(this, wxID_ANY, stopKeyName);
+		this->SetExtraStyle(wxWANTS_CHARS);
+		stopKeyEntry->Bind(wxEVT_NAVIGATION_KEY, wxKeyEventHandler(SettingsPagePanel::OnNavKey), this);
+		stopKeyEntry->Bind(wxEVT_KEY_UP, wxKeyEventHandler(SettingsPagePanel::OnKeyUp), this);
+		stopKeyEntry->Bind(wxEVT_KEY_DOWN, wxKeyEventHandler(SettingsPagePanel::OnKeyDown), this);
+		table->Add(stopKeyText, wxSizerFlags().Expand());
+		table->Add(stopKeyEntry, wxSizerFlags().Expand());
+
+		//Dim Volume (% of max):
+		wxStaticText *dimPctText = new wxStaticText(this, wxID_ANY, "Dim Volume (%): ");
+		dimPctCtrl = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition,
+									wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_LEFT);
+		dimPctCtrl->SetValue((settings->getDimMult() * 100));
+		table->Add(dimPctText, wxSizerFlags().Expand());
+		table->Add(dimPctCtrl, wxSizerFlags().Expand());
+
+		//Dim Threshold (% of max):
+		wxStaticText *dimThreshText = new wxStaticText(this, wxID_ANY, "Dim Activation (%): ");
+		dimThreshCtrl = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition,
+									wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_LEFT);
+		dimThreshCtrl->SetValue((settings->getDimThreshold() * 100));
+		table->Add(dimThreshText, wxSizerFlags().Expand());
+		table->Add(dimThreshCtrl, wxSizerFlags().Expand());
+
+		//Ramp Time (ms):
+		wxStaticText *rampTimeText = new wxStaticText(this, wxID_ANY, "Ramp Time (ms): ");
+		rampTimeCtrl = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition,
+									wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_LEFT, 0, 5000);
+		rampTimeCtrl->SetValue(settings->getRampTime());
+		table->Add(rampTimeText, wxSizerFlags().Expand());
+		table->Add(rampTimeCtrl, wxSizerFlags().Expand());
+
+		//Refresh Time (ms):
+		wxStaticText *refreshTimeText = new wxStaticText(this, wxID_ANY, "Refresh Time (ms): ");
+		refreshTimeCtrl = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition,
+									wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_LEFT, 0, 500);
+		refreshTimeCtrl->SetValue(settings->getRefreshTime());
+		table->Add(refreshTimeText, wxSizerFlags().Expand());
+		table->Add(refreshTimeCtrl, wxSizerFlags().Expand());
+
+		//Final disaplay:
+		this->SetSizerAndFit(table);
 		Layout();
 		//TODO: insert buttons and bind events
-}
-
-NoMoveWindow::NoMoveWindow(wxWindow* parent, wxWindowID id) : wxWindow(parent, id){
-	this->SetExtraStyle(wxWS_EX_TRANSIENT);
-	this->SetExtraStyle(wxWS_EX_BLOCK_EVENTS);
 }
 
 SHORT WXtoVK(wxKeyCode i) {
@@ -473,7 +541,7 @@ SHORT WXtoVK(wxKeyCode i) {
 	//ASCII keys
 	//These keys don't seem to match between wxWidgets and Microsoft's virtual keys.
 	//	Use VkKeyScanEx to translate char i to a virtual key code.
-	if (i >= '!' && i <= '/') {
+	else if (i >= '!' && i <= '/') {
 		SHORT code = VkKeyScanEx(i, GetKeyboardLayout(0));
 		//set high order bit to 0 to ignore shift
 		code = code & 0xCF;
@@ -512,12 +580,33 @@ void SettingsPageGeneral::setSettings(Settings* settings) {
 	this->settings = settings;
 }
 
-void vkToText(int vk, char name[MAX_KEY_NAME]) {
+void vkToText(SHORT vk, char name[MAX_KEY_NAME]) {
 	memset(name, '\0', sizeof name);
-	UINT scanCode = MapVirtualKeyW(vk, MAPVK_VK_TO_VSC);
+	//UINT scanCode = MapVirtualKeyW(vk, MAPVK_VK_TO_VSC);
+	UINT scanCode = MapVirtualKeyEx(vk, MAPVK_VK_TO_VSC, GetKeyboardLayout(0));
 	LONG lParamValue = (scanCode << 16);
 	GetKeyNameTextW(lParamValue, (LPWSTR)name, MAX_KEY_NAME);
-	name[MAX_KEY_NAME - 1] = '\0';
+	name[(MAX_KEY_NAME - 1)] = '\0';
+}
+
+bool SettingsPagePanel::TransferDataFromWindow() {
+	int check = 0;
+	check = settings->setMuteKey(muteKeyValue);
+	if (check != 0) std::cout << "Error in mute key value";
+	check = settings->setStopKey(stopKeyValue);
+	if (check != 0) std::cout << "Error in stop key value";
+	check = settings->setDimMult(((float)dimPctCtrl->GetValue())/100);
+	if (check != 0) std::cout << "Error in dim mult value";
+	check = settings->setDimThreshold(((float)dimThreshCtrl->GetValue())/100);
+	if (check != 0) std::cout << "Error in dim threshold value";
+	check = settings->setRampTime(rampTimeCtrl->GetValue());
+	if (check != 0) std::cout << "Error in ramp time value";
+	check = settings->setRefreshTime(refreshTimeCtrl->GetValue());
+	if (check != 0) std::cout << "Error in refresh time value";
+	
+	settings->saveSettings();
+
+	return true;
 }
 
 /*

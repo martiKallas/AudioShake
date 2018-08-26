@@ -6,6 +6,7 @@
 */
 #pragma once
 #include "AudioInterface.hpp"
+#include "Settings.hpp"
 #include "wx/wx.h"
 #include <vector>
 

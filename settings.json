@@ -1,8 +1,9 @@
 {
-    "RefreshTime": "50",
-    "DimThreshold": "0.02",
-    "DimMult": "0.5",
-    "RampTime": "1000",
+    "RefreshTime": "30",
+    "DimThreshold": "0.0500000007",
+    "DimMult": "0.300000012",
+    "RampTime": "1500",
     "MuteKey": "190",
-    "QuitKey": "115"
+    "QuitKey": "115",
+    "StopKey": "115"
 }
